@@ -14,6 +14,15 @@
 
 需要 .NET 10 SDK 与 Windows 开发者模式（packaged 应用要以调试标识注册运行）。
 
+`local-dev/` 是独立仓库 [`EliCloudOrg/devtools`](https://github.com/EliCloudOrg/devtools)
+的 submodule，拉代码时要一起初始化：
+
+```powershell
+git clone --recursive https://github.com/EliCloudOrg/EliCloudDesktop.git
+# 已经 clone 过、local-dev 还是空目录：
+git submodule update --init --recursive
+```
+
 ### 两套开发构建方式
 
 | 配置 | 连哪 | 什么时候用 |
@@ -45,6 +54,9 @@ dotnet build src\EliCloudDesktop\EliCloudDesktop.csproj -c Debug-Local -p:Platfo
 注册确认链接写在 `local-dev\.data\logs\email.log`，也可跑
 `tools\ui-register-smoke.ps1` 做完整冒烟。
 
+升级联调框架：在 `local-dev` 里 `git pull`（或切到新 tag），回到仓库根
+`git add local-dev && git commit`，把新的 pin 提交上来。
+
 ### 平台入口地址是构建时注入的
 
 两个配置的差别**只有这一个值**：`Debug-Local` 写 `http://127.0.0.1:8080`，
@@ -73,7 +85,7 @@ EliCloudDesktop/
 │   ├── reactor-feasibility.md  技术选型：哪里用 Reactor、哪里借官方控件、哪里走逃生舱
 │   ├── copy-style.md           文案风格（ToC）与本次改写的对照表
 │   └── screenshots/            实机截图，与设计稿逐屏比对用
-├── local-dev/                  本地/联调服务端（源码版五服务 + 容器版四服务）
+├── local-dev/                  submodule → EliCloudOrg/devtools（五服务联调 + 容器版）
 ├── tools/
 │   ├── start-local-server.ps1  兼容壳：转到 local-dev/dev.ps1
 │   ├── local-account.ps1       在本地服务端建号 / 改密码 / 列账号

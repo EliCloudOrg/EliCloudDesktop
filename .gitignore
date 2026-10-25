@@ -16,14 +16,12 @@ certs/
 *.user
 *.suo
 
-## Machine-local settings and the local dev environment (never committed)
+## Machine-local settings (never committed)
 *.local.json
 .local/
-local-dev/.env
-local-dev/.data*/
-local-dev/.venv/
-local-dev/.tmp/
-local-dev/__pycache__/
+
+## local-dev/ 是 submodule（EliCloudOrg/devtools），
+## 它的 .data* / .venv / __pycache__ 由子仓库自己的 .gitignore 管理。
 
 ## Temp / diagnostics
 *.binlog
