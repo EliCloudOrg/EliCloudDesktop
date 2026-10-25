@@ -1,0 +1,33 @@
+## Build output
+bin/
+obj/
+artifacts/
+## 旧版 MSIX 输出目录：.msix 现在落在 artifacts/msix/（见 csproj 的 AppxPackageDir）
+AppPackages/
+
+## msixpkg 开发签名证书：私钥绝不入库（导出的 .cer 会内嵌进 .msixpkg 容器，也不必入库）
+*.pfx
+certs/
+
+## IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+## Machine-local settings and the local dev environment (never committed)
+*.local.json
+.local/
+local-dev/.env
+local-dev/.data*/
+local-dev/.venv/
+local-dev/.tmp/
+local-dev/__pycache__/
+
+## Temp / diagnostics
+*.binlog
+*.log
+
+## pip scratch dirs dropped in the repo root while installing the local SSO deps
+pip-*/

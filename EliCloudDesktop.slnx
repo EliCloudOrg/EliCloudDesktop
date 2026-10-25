@@ -1,0 +1,41 @@
+<Solution>
+  <!--
+    构建方式（见 src/EliCloudDesktop/EliCloudDesktop.csproj 的 <Configurations>）：
+      Debug-Prod   连远程平台（默认）
+      Debug-Local  连本机服务端（local-dev/dev.ps1；tools/start-local-server.ps1 为兼容壳）
+      Debug        等同 Debug-Prod（保留，让不带 -c 的构建与 VS 默认配置照旧可用）
+      Release      发布
+
+    解决方案的平台也必须显式列出：WinUI 工程只支持 x86/x64/ARM64，
+    默认的 “Any CPU” 会让 `dotnet build EliCloudDesktop.slnx` 报 MSB4126。
+    传 -p:Platform=x64（或 ARM64）时才会匹配到这里的平台。
+  -->
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Debug-Prod" />
+    <BuildType Name="Debug-Local" />
+    <BuildType Name="Release" />
+    <Platform Name="x64" />
+    <Platform Name="ARM64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <!--
+      必须为工程显式声明平台映射：.slnx 的默认映射会把解决方案的每个配置
+      （Debug/Release × x64/x86/ARM64）都解析成工程的 “Debug|Any CPU” /
+      “Release|Any CPU”，而这个 WinUI 工程只有 x86/x64/ARM64 配置，
+      Visual Studio 因此报“解决方案指定了工程不存在的工程配置”。
+      显式映射后，Debug|x64 等都会落到真实存在的 Debug|x64 等配置上，
+      工程也能拿到正确的 Platform=x64 / x86 / ARM64。
+      （Solution 侧用 * 通配，所以 Debug-Prod / Debug-Local 自动沿用同一套映射。）
+    -->
+    <Project Path="src/EliCloudDesktop/EliCloudDesktop.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x86" Project="x86" />
+      <Deploy Solution="Debug-Local|x64" />
+      <Deploy Solution="Debug-Prod|x64" />
+      <Deploy Solution="Debug|x64" />
+    </Project>
+  </Folder>
+</Solution>

@@ -1,0 +1,18 @@
+{
+  "profiles": {
+    "EliCloudDesktop (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "EliCloudDesktop (Unpackaged)": {
+      "commandName": "Project"
+    },
+    "EliCloudDesktop (Unpackaged, Devtools)": {
+      "commandName": "Project",
+      "commandLineArgs": "--devtools"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    }
+  }
+}

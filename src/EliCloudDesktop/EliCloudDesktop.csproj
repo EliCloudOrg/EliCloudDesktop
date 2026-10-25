@@ -1,0 +1,297 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <RootNamespace>EliCloudDesktop</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon Condition="Exists('Assets\AppIcon.ico')">Assets\AppIcon.ico</ApplicationIcon>
+    <Platforms>x86;x64;ARM64</Platforms>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
+    <PublishProfile Condition="Exists('Properties\PublishProfiles\win-$(Platform).pubxml')">win-$(Platform).pubxml</PublishProfile>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!--
+      两套开发构建方式 + 一套发布配置：
+        Debug-Prod   连远程平台（默认；远程就是我们要发布的那套环境）
+        Debug-Local  连本机起的服务端（local-dev/，见 README §1）
+        Debug        等同 Debug-Prod —— 保留是为了让不带 -c 的构建、以及 VS 的默认配置照旧可用
+        Release      发布用
+      名字里带 Debug/Release 前缀是有意的：下面靠这个前缀把「调试符号/优化/条件编译常量」映射过去，
+      因为 .NET SDK 只认得 "Debug" / "Release" 这两个字面量。
+    -->
+    <Configurations>Debug;Debug-Prod;Debug-Local;Release</Configurations>
+  </PropertyGroup>
+
+  <!--
+    自定义配置名不是 SDK 认得的字面量，所以这里显式对齐两套编译语义。
+  -->
+  <PropertyGroup Condition="$(Configuration.StartsWith('Debug'))">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>$(DefineConstants);DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(Configuration.StartsWith('Release'))">
+    <Optimize>true</Optimize>
+    <DefineConstants>$(DefineConstants);RELEASE;TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <!--
+    平台入口地址 —— **构建时注入**，运行时不提供任何读取/修改入口（客户端不展示它，
+    也不接受环境变量或配置文件覆盖，因为它属于我方基础设施，不是用户设置）。
+
+    默认落在 Debug-Prod / Release（远程）；Debug-Local 指向本机服务端。
+    想临时打到别的环境，用 -p:EliCloudPlatformBaseAddress=... 覆盖（显式传入优先）。
+
+    值会被写进程序集元数据，由 Core/PlatformConfig.cs 在首次使用时读出并校验。
+  -->
+  <PropertyGroup>
+    <EliCloudPlatformBaseAddress Condition="'$(Configuration)' == 'Debug-Local'">http://127.0.0.1:8080</EliCloudPlatformBaseAddress>
+    <EliCloudPlatformBaseAddress Condition="'$(EliCloudPlatformBaseAddress)' == ''">https://146.56.237.33</EliCloudPlatformBaseAddress>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>EliCloudPlatformBaseAddress</_Parameter1>
+      <_Parameter2>$(EliCloudPlatformBaseAddress)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <!--
+    把入口地址同时生成成一个**编译期常量**（PlatformConfig.g.cs）。
+
+    为什么不只靠程序集元数据：Release 配置是 PublishTrimmed=true，
+    运行时反射读元数据是一条需要"相信裁剪器会保留它"的路径；
+    编译期常量对裁剪天然免疫，启动时也不引入反射。
+    元数据保留下来，是为了能直接从构建产物里看出这份 DLL 是为哪个入口构建的。
+  -->
+  <Target Name="GeneratePlatformConfig" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <_PlatformConfigLine Include="// &lt;auto-generated&gt; 由 EliCloudDesktop.csproj 的 GeneratePlatformConfig 目标生成。" />
+      <_PlatformConfigLine Include="// 值来自构建属性 EliCloudPlatformBaseAddress，不要手改本文件。" />
+      <_PlatformConfigLine Include="namespace EliCloudDesktop.Core%3B" />
+      <_PlatformConfigLine Include="internal static partial class PlatformConfig" />
+      <_PlatformConfigLine Include="{" />
+      <_PlatformConfigLine Include="    /// &lt;summary&gt;构建时注入的平台入口地址（未校验的原始值，校验见 PlatformConfig.cs）。&lt;/summary&gt;" />
+      <_PlatformConfigLine Include="    public const string InjectedBaseAddress = &quot;$(EliCloudPlatformBaseAddress)&quot;%3B" />
+      <_PlatformConfigLine Include="}" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(IntermediateOutputPath)PlatformConfig.g.cs" Lines="@(_PlatformConfigLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)PlatformConfig.g.cs" />
+      <FileWrites Include="$(IntermediateOutputPath)PlatformConfig.g.cs" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <Content Include="Assets\SplashScreen.scale-200.png" />
+    <Content Include="Assets\LockScreenLogo.scale-200.png" />
+    <Content Include="Assets\Square150x150Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-48_altform-lightunplated.png" />
+    <Content Include="Assets\AppIcon.ico" />
+    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+
+    <!--
+      应用内容图片：文件名即语义（需求 #7）。
+      全部从 E:\Download\EliCloudDesktopUI.fig 1:1 导出或按设计稿语义生成，
+      来源与用途见 Assets/Images/README.md。
+    -->
+    <Content Include="Assets\Images\home-hero-banner-christmas-pink.jpg" />
+    <Content Include="Assets\Images\user-avatar-default.png" />
+    <Content Include="Assets\Images\service-icon-minecraft-block.png" />
+    <Content Include="Assets\Images\service-icon-pdf-lock.png" />
+    <Content Include="Assets\Images\elicloud-app-icon-cloud.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <!--
+    Defining the "Msix" ProjectCapability here allows the Single-project MSIX Packaging
+    Tools extension to be activated for this project even if the Windows App SDK Nuget
+    package has not yet been restored.
+  -->
+  <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <ProjectCapability Include="Msix" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Windows Community Toolkit 的 SettingsCard / SettingsExpander。
+      用 Reactor 的 [GenerateReactorWrapper] 源生成器把它包成声明式元素，
+      所以在工程里看不到任何 XAML 文件（见 Ui/SettingsCardElement.cs）。
+    -->
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.250402" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="*" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="*" />
+    <!--
+      Microsoft.Windows.SDK.BuildTools.WinApp adds first-class support for
+      `dotnet run` on packaged apps: it hooks the .NET CLI Run target to
+      register a debug identity via the winapp CLI and launch the app with
+      package identity (AUMID).
+    -->
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.WinApp" Version="*" />
+    <PackageReference Include="Microsoft.UI.Reactor" Version="0.1.0-preview.16" />
+  </ItemGroup>
+
+  <!--
+    EliCloud.Sdk 的接入方式：
+      1) -p:EliCloudSdkProject=<SDK csproj>：显式 ProjectReference（本地联调未发布版本）；
+      2) 默认：如果并列的 EliCloud.Sdk 仓库存在，自动走 ProjectReference；
+      3) 否则（CI / 只检出本仓库）：走 NuGet 1.0.0-alpha.3。
+    不把本机绝对路径写死进仓库。
+  -->
+  <ItemGroup Condition="'$(EliCloudSdkProject)' != ''">
+    <ProjectReference Include="$(EliCloudSdkProject)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(EliCloudSdkProject)' == '' and Exists('..\..\..\EliCloud.Sdk\src\EliCloud.Sdk\EliCloud.Sdk.csproj')">
+    <ProjectReference Include="..\..\..\EliCloud.Sdk\src\EliCloud.Sdk\EliCloud.Sdk.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(EliCloudSdkProject)' == '' and !Exists('..\..\..\EliCloud.Sdk\src\EliCloud.Sdk\EliCloud.Sdk.csproj')">
+    <PackageReference Include="EliCloud.Sdk" Version="1.0.0-alpha.3" />
+  </ItemGroup>
+
+  <!--
+    Debug-only: enable the Reactor devtools surface so the devtools F5 profile
+    (in Properties/launchSettings.json) lights up the devtools menu. Release /
+    Publish builds drop the package and the host-config switch so the trim / AOT
+    analyzers stay happy. To enable devtools in Release too, move these into the
+    unconditioned ItemGroup above.
+  -->
+  <ItemGroup Condition="$(Configuration.StartsWith('Debug'))">
+    <PackageReference Include="Microsoft.UI.Reactor.Devtools" Version="0.1.0-preview.16" />
+    <RuntimeHostConfigurationOption Include="Reactor.DevtoolsSupport" Value="true" Trim="true" />
+  </ItemGroup>
+
+  <!--
+    Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
+    Explorer "Package and Publish" context menu entry to be enabled for this project even if
+    the Windows App SDK Nuget package has not yet been restored.
+  -->
+  <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+  </PropertyGroup>
+
+  <!--
+    Publish Properties
+
+    ⚠️ Release **不裁剪**（PublishTrimmed=false），这是有意偏离模板默认值的：
+    EliCloud.Sdk 内部用反射式 System.Text.Json 反序列化它自己的 DTO，
+    裁剪器无法证明这些类型会被用到 —— 这正是它报出 IL2104
+    （"Assembly 'EliCloud.Sdk' produced trim warnings"）的原因。
+    把反射式序列化当裁剪安全的来对待，风险不是"多几个警告"，而是线上某个响应解析不出来。
+    体积换正确性，这里选正确性。
+  -->
+  <PropertyGroup>
+    <PublishReadyToRun Condition="$(Configuration.StartsWith('Debug'))">False</PublishReadyToRun>
+    <PublishReadyToRun Condition="$(Configuration.StartsWith('Release'))">True</PublishReadyToRun>
+    <PublishTrimmed>False</PublishTrimmed>
+  </PropertyGroup>
+
+  <!--
+    ========== 签名证书密码从哪来 ==========
+    按优先级：
+      1) 命令行 -p:MsixDevCertPassword=<Password>（CI 与一次性构建走这条）
+      2) 本机私有文件 certs\local.props（**在 Visual Studio 里构建必须靠这条**：VS 传不了 -p:）
+      3) 环境变量 MSIXPKG_DEV_CERT_PASSWORD
+
+    certs/ 整个目录都在 .gitignore 里，所以 local.props 与 .pfx 都不会入库。
+    这个 Import 必须放在下面「Msixpkg integration」块**之前**：MSBuild 按文档顺序求值属性，
+    放到后面就来不及参与 PackageCertificatePassword 的赋值。
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)certs\local.props"
+          Condition="'$(MsixDevCertPassword)' == '' and Exists('$(MSBuildThisFileDirectory)certs\local.props')" />
+
+  <!-- ======== Msixpkg integration (appended by msixpkg-adopt) ======== -->
+  <!--
+    接入 Msixpkg.Build（NuGet 包 0.1.0）：发布配置一次 `dotnet build` 就产出已签名的 .msixpkg。
+
+    为什么这一整块带 Condition（本项目特有，与 skill 的默认写法不同）：
+      本工程有四套配置（Debug / Debug-Prod / Debug-Local / Release），三套开发配置
+      原本不需要证书就能构建、能 dotnet run / F5。产包要签名、签名要证书与密码，
+      无条件下打开会让开发配置直接构建失败，也会让每次 F5 都白打包一次。
+      所以默认只在 Release 打开；想在别的配置下产包：-p:MsixpkgPublishBuild=true。
+  -->
+  <PropertyGroup>
+    <!-- 单项目 MSIX：本工程已有 EnableMsixTooling 与 Package.appxmanifest，这里写显式值 -->
+    <WindowsPackageType>MSIX</WindowsPackageType>
+
+    <!-- 「发布构建」的判据：Release 配置（命令行属性优先，可覆盖） -->
+    <MsixpkgPublishBuild Condition="'$(MsixpkgPublishBuild)' == ''">$(Configuration.StartsWith('Release'))</MsixpkgPublishBuild>
+
+    <!-- 容器在安装器 GUI 里的展示信息；不参与包身份，改它不会让签名失配 -->
+    <MsixpkgDisplayName>EliCloud 桌面客户端</MsixpkgDisplayName>
+    <MsixpkgDisplayDescription>EliCloud 平台桌面客户端：账号登录、服务状态、Minecraft 服务与设置。</MsixpkgDisplayDescription>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MsixpkgPublishBuild)' == 'true'">
+    <!-- 产物落地目录；下面还会多一层 应用名_版本_平台_Test\ 子目录 -->
+    <AppxPackageDir>$(MSBuildProjectDirectory)\artifacts\msix\</AppxPackageDir>
+    <AppxBundle>Never</AppxBundle>
+    <UapAppxPackageBuildMode>SideloadOnly</UapAppxPackageBuildMode>
+
+    <!-- 命令行构建也要真的产包；缺这条会「构建成功但没有 .msixpkg」 -->
+    <GenerateAppxPackageOnBuild>true</GenerateAppxPackageOnBuild>
+
+    <!--
+      签名：密码绝不入库。来源见文件上方那段 Import 的注释（命令行 → certs\local.props → 环境变量）。
+      不给密码不是「不签名」，而是 MSIX 签名任务直接失败（APPX0105/APPX0107 变成 error），
+      所以下面 EliCloudCheckSigningCertificate 会先给一条能看懂的错。
+    -->
+    <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
+    <PackageCertificateKeyFile>$(MSBuildThisFileDirectory)certs\App.Dev.pfx</PackageCertificateKeyFile>
+    <PackageCertificatePassword Condition="'$(MsixDevCertPassword)' != ''">$(MsixDevCertPassword)</PackageCertificatePassword>
+    <PackageCertificatePassword Condition="'$(PackageCertificatePassword)' == ''">$(MSIXPKG_DEV_CERT_PASSWORD)</PackageCertificatePassword>
+
+    <!--
+      自带 Windows App SDK 运行时：生成的 .msix 不再声明 Microsoft.WindowsAppRuntime.* 依赖，
+      容器里也就没有需要额外安装的框架包（因此 MsixpkgDependencyDir 实际用不到）。
+      要回到框架依赖模式：-p:WindowsAppSDKSelfContained=false，并把 MsixpkgDependencyDir
+      指到 .msix 同级的 Dependencies\ 目录（见 README「打包成 .msixpkg」一节）。
+    -->
+    <WindowsAppSDKSelfContained Condition="'$(WindowsAppSDKSelfContained)' == ''">true</WindowsAppSDKSelfContained>
+    <MsixpkgDependencyDir>$(AppxPackageDir)Dependencies\</MsixpkgDependencyDir>
+
+    <!-- MsixpkgPack 目标的开关；默认 false 时不打开就「构建成功却没有 .msixpkg」 -->
+    <MsixpkgEnabled>true</MsixpkgEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      唯一接入点：包里的 build\Msixpkg.Build.targets 由 NuGet 经 obj\*.nuget.g.targets 自动导入，
+      因此这里既不写 Import 也不写 ProjectReference。
+      Restore 与 Build 必须分两次调用：那份 nuget.g.targets 由 Restore 生成，
+      同一次 /t:Restore,Rebuild 来不及在求值阶段导入它，表现就是「构建成功但没有 .msixpkg」。
+    -->
+    <PackageReference Include="Msixpkg.Build" Version="0.1.0" />
+  </ItemGroup>
+
+  <!--
+    签名前先自检一遍。
+
+    为什么需要它：证书文件在、密码没给的时候，MSIX 工具链只会在 _GenerateAppxPackageFile 里抛
+    APPX0105 / APPX0107（"The key file may be password protected"），而且那一步是 **error**
+    不是 warning —— 表现成「.msix 都产出来了，构建却失败，也没有 .msixpkg」，很难看出缺什么。
+    这里把「缺证书」和「缺密码」分开说清楚。
+
+    只在产包构建里跑（Release / -p:MsixpkgPublishBuild=true），不干扰三套开发配置。
+  -->
+  <Target Name="EliCloudCheckSigningCertificate"
+          BeforeTargets="_GenerateAppxPackageFile"
+          Condition="'$(MsixpkgPublishBuild)' == 'true' and '$(AppxPackageSigningEnabled)' == 'true'">
+    <Error Condition="!Exists('$(PackageCertificateKeyFile)')"
+           Text="找不到签名证书：$(PackageCertificateKeyFile)。先生成它 —— winapp cert generate --manifest src\EliCloudDesktop\Package.appxmanifest --output src\EliCloudDesktop\certs\App.Dev.pfx --password &lt;Password&gt; --valid-days 3650 --export-cer" />
+    <Error Condition="'$(PackageCertificatePassword)' == ''"
+           Text="签名证书密码没提供，MSIX 签名会以 APPX0105/APPX0107 失败。三选一：(1) 命令行 -p:MsixDevCertPassword=…；(2) 建本机文件 src\EliCloudDesktop\certs\local.props，内容为 &lt;Project&gt;&lt;PropertyGroup&gt;&lt;MsixDevCertPassword&gt;你的密码&lt;/MsixDevCertPassword&gt;&lt;/PropertyGroup&gt;&lt;/Project&gt; —— 在 Visual Studio 里构建只能用这条，certs/ 已在 .gitignore 里；(3) 设环境变量 MSIXPKG_DEV_CERT_PASSWORD。" />
+  </Target>
+</Project>
