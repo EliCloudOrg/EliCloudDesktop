@@ -164,12 +164,7 @@ internal sealed class App : Component
             .Provide(EliCloudContexts.State, state)
             .Provide(EliCloudContexts.Dispatch, dispatch)
             .Provide(EliCloudContexts.Gateway, gateway)
-            .RequestedTheme(state.Theme switch
-            {
-                AppTheme.Dark => ElementTheme.Dark,
-                AppTheme.Light => ElementTheme.Light,
-                _ => ElementTheme.Default,
-            })
+            .RequestedTheme(state.Theme.ToElementTheme())
             .Backdrop(BackdropKind.Mica);
     }
 }

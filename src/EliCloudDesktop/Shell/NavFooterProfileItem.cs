@@ -11,6 +11,9 @@ using Microsoft.UI.Reactor.Layout;
 using Microsoft.UI.Reactor.Navigation;
 using static Microsoft.UI.Reactor.Factories;
 
+// Grid 这个名字被 Reactor 的工厂方法占用了，这里要的是原生面板。
+using XamlGrid = Microsoft.UI.Xaml.Controls.Grid;
+
 namespace EliCloudDesktop.Shell;
 
 /// <summary>
@@ -105,6 +108,7 @@ internal static class NavFooterProfileItem
             Height = 64,
             CornerRadius = new CornerRadius(32),
             Child = avatar,
+            VerticalAlignment = VerticalAlignment.Center,
         };
 
         var text = new StackPanel
@@ -118,7 +122,12 @@ internal static class NavFooterProfileItem
             Text = displayName,
             FontSize = 14,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+
+            // TextTrimming 只在「量到的宽度比文字窄」时才出省略号。放进横向 StackPanel
+            // （主轴上不限宽）时 TextBlock 会按整段文字量宽，永远不触发 —— 截断就只剩硬裁。
+            // 所以下面把根节点换成 Auto + Star 的 Grid，让文字列拿到确定的剩余宽度。
             TextTrimming = TextTrimming.CharacterEllipsis,
+            TextWrapping = TextWrapping.NoWrap,
         });
         text.Children.Add(new TextBlock
         {
@@ -126,17 +135,21 @@ internal static class NavFooterProfileItem
             FontSize = 12,
             Opacity = 0.61,
             TextTrimming = TextTrimming.CharacterEllipsis,
+            TextWrapping = TextWrapping.NoWrap,
         });
 
-        var root = new StackPanel
+        // 头像 Auto 列、文字 Star 列：文字据此拿到页脚条目的剩余宽度，省略号才会生效。
+        // 稿子里这一格是 320×79，头像是 64×64 —— 上下各留 8（合计 16）正好凑出 79。
+        var root = new XamlGrid
         {
-            Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
-
-            // 稿子里这一格是 320×79，头像是 64×64 —— 上下各留 8（合计 16）正好凑出 79。
-            // 不加的话条目会被撑成头像那一行的最小高度，看起来是「贴边的」。
             Padding = new Thickness(0, 8, 0, 8),
         };
+        root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        XamlGrid.SetColumn(avatarHost, 0);
+        XamlGrid.SetColumn(text, 1);
         root.Children.Add(avatarHost);
         root.Children.Add(text);
         return root;

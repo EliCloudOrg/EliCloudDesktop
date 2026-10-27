@@ -36,6 +36,9 @@ internal static class DesignTokens
     /// <summary>主页 Hero 横幅高度（稿：932×156）。</summary>
     public const double HeroBannerHeight = 156;
 
+    /// <summary>个人资料页头图比例：设计稿横幅 932×186 ≈ 5:1，裁切与显示共用这一档。</summary>
+    public const double BannerAspectRatio = 5d;
+
     /// <summary>服务卡片最小高度（稿：820×64）。</summary>
     public const double ServiceCardMinHeight = 64;
 

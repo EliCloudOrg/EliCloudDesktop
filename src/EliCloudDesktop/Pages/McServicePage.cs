@@ -100,7 +100,8 @@ internal sealed partial class McServicePage : Component
             Widgets.PageHeader(
                 "Minecraft 玩家服务器",
                 "绑定用户名以获取准入权限",
-                actions: FlexRow(
+                actions: HStack(
+                    8,
                     // 提交时弹窗已经关了，这里留一个转圈，免得页面上只剩「按钮变灰」。
                     submitting
                         ? ProgressRing().Width(16).Height(16).AutomationName("正在添加用户名")
@@ -108,11 +109,8 @@ internal sealed partial class McServicePage : Component
                     Button("添加用户名", OpenAddDialog)
                         .AccentButton()
                         .IsEnabled(canOpenAdd),
-                    Button("刷新", () => bumpReload(n => n + 1))) with
-                {
-                    ColumnGap = 8,
-                    AlignItems = FlexAlign.Center,
-                }),
+                    Button("刷新", () => bumpReload(n => n + 1))),
+                actionsAtRight: true),
 
             ScrollView(VStack(
                 16,
@@ -135,6 +133,7 @@ internal sealed partial class McServicePage : Component
                 draftName, setDraftName,
                 draftNote, setDraftNote,
                 canSubmit,
+                state.Theme,
                 HandleAddDialogClosed));
 
         void OpenAddDialog()
@@ -342,6 +341,7 @@ internal sealed partial class McServicePage : Component
         string draftNote,
         Action<string> setDraftNote,
         bool canSubmit,
+        AppTheme theme,
         Action<ContentDialogResult> onClosed)
     {
         var fields = new List<Element>
@@ -357,7 +357,9 @@ internal sealed partial class McServicePage : Component
                 $"写清楚为什么需要这个名额，最多 {NoteMaxLength} 字"),
         };
 
-        return ContentDialog(
+        ContentDialog? native = null;
+
+        return (ContentDialog(
             "添加用户名",
             VStack(12, [.. fields]).Width(420),
             primaryButtonText: "添加") with
@@ -366,7 +368,16 @@ internal sealed partial class McServicePage : Component
             CloseButtonText = "取消",
             DefaultButton = ContentDialogButton.Primary,
             IsPrimaryButtonEnabled = canSubmit,
+            // 弹窗在 XamlRoot 浮层上，不继承页面主题；必须等它打开之后再写给原生控件
+            // （挂载时写会被随后的弹窗模板/主题解析覆盖，表现出来还是系统主题）。
+            OnOpened = () =>
+            {
+                if (native is null) return;
+                var elementTheme = theme.ToElementTheme();
+                if (native.RequestedTheme != elementTheme) native.RequestedTheme = elementTheme;
+            },
             OnClosed = onClosed,
-        };
+        })
+        .Set(dialog => native = dialog);
     }
 }

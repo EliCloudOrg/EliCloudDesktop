@@ -47,6 +47,17 @@ internal sealed class HomePage : Component
         var state = UseContext(EliCloudContexts.State);
         var nav = UseNavigation<Route>();
 
+        // Hero 的渐变要跟着实际生效的主题换底（浅色白、深色黑）。
+        // UseIsDarkTheme() 只反映应用级配色、不看元素上的 RequestedTheme，而 App 是按 state.Theme
+        // 给整棵树设元素级主题的 —— 所以显式主题直接用 state，只有「跟随系统」才回落到这个应用级值。
+        var appIsDark = UseIsDarkTheme();
+        var isDarkTheme = state.Theme switch
+        {
+            AppTheme.Dark => true,
+            AppTheme.Light => false,
+            _ => appIsDark,
+        };
+
         var body = new List<Element>();
 
         // 还没拿到任何结论时，先说明正在检查，而不是把服务错误地归到「停止服务」。
@@ -86,7 +97,7 @@ internal sealed class HomePage : Component
         }
 
         return FlexColumn(
-            Widgets.HeroBanner(HeroTitle, HeroDescription, HeroBannerUri),
+            Widgets.HeroBanner(HeroTitle, HeroDescription, HeroBannerUri, isDarkTheme),
 
             ScrollView(
                 VStack(16, [.. body])

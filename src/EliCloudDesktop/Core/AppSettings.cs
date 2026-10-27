@@ -18,8 +18,8 @@ internal sealed record AppSettings(string? LastUsername, AppTheme Theme)
     private const string FolderName = "EliCloud";
     private const string FileName = "settings.json";
 
-    /// <summary>默认：没有上次的用户名，用设计稿的浅色主题。</summary>
-    public static AppSettings Default => new(null, AppTheme.Light);
+    /// <summary>默认：没有上次的用户名，主题跟随 Windows。</summary>
+    public static AppSettings Default => new(null, AppTheme.System);
 
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

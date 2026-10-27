@@ -132,6 +132,11 @@
       所以在工程里看不到任何 XAML 文件（见 Ui/SettingsCardElement.cs）。
     -->
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.250402" />
+    <!--
+      头像裁切用 Toolkit 的 ImageCropper（与 SettingsControls 同一版本线）。
+      同样由 [GenerateReactorWrapper] 包成声明式元素，见 Ui/ImageCropperElement.cs。
+    -->
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.ImageCropper" Version="8.2.250402" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="*" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="*" />
     <!--

@@ -11,9 +11,9 @@ internal sealed record AppState(
     string? LastUsername,
     UserProfile? Profile)
 {
-    /// <summary>未登录、未探测、设计稿主题、没有历史用户名与资料的初始状态。</summary>
+    /// <summary>未登录、未探测、主题跟随系统、没有历史用户名与资料的初始状态。</summary>
     public static readonly AppState Empty =
-        new(SessionState.SignedOut, ServiceStatusSnapshot.Empty, AppTheme.Light, null, null);
+        new(SessionState.SignedOut, ServiceStatusSnapshot.Empty, AppTheme.System, null, null);
 }
 
 /// <summary>所有状态变更意图。</summary>

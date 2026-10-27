@@ -106,8 +106,11 @@ internal sealed class MainShell : Component
         var displayName = state.Profile?.DisplayName(state.Session.DisplayName) ?? state.Session.DisplayName;
         // avatarSha 只说明「服务端有图」；位图加载完成后 navAvatar 才非 null。
         // 两者都要进签名，否则图拉回来时签名不变，Apply 不会重建 Nav 内容。
+        // 头像被「移除」时 sha 立刻为空、位图却要等 effect 跑完才清空 —— 这一小段必须用
+        // 单独的 "stale" 区分开，否则签名提前落到 "default"、之后位图变 null 时签名不再变化，
+        // Nav 页脚会一直留着旧头像。
         var avatarKey = avatarSha is not { Length: > 0 }
-            ? "default"
+            ? navAvatar is null ? "default" : "stale"
             : navAvatar is null
                 ? "pending"
                 : $"loaded:{avatarSha}";
