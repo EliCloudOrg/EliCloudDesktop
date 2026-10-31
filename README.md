@@ -15,6 +15,21 @@
 
 ---
 
+## 下载安装
+
+面向最终用户的安装包在 [Releases](https://github.com/EliCloudOrg/EliCloudDesktop/releases) 页面：
+下载最新的 `EliCloudDesktop_<版本>_x64.msixpkg`，用 [msixpkg](https://github.com/EliCloudOrg/MsixpkgInstaller)
+安装器 `install`（需管理员；容器自带发布者证书，安装器会把它写进 `LocalMachine\TrustedPeople`，
+用户不用手工导入）。
+
+- 系统要求：Windows 10 2004（build 19041）及以上、x64。
+- 自包含：Windows App SDK 运行时已打进包内，干净机器装完即可运行，无需另装框架包。
+- 安装包用自签证书（`CN=Elipese`）签名，只适合内部分发；换受信证书后才对外公开分发。
+
+想自己构建 / 改代码，往下看开发流程。
+
+---
+
 ## 1. 快速开始
 
 需要 .NET 10 SDK 与 Windows 开发者模式（packaged 应用要以调试标识注册运行）。
