@@ -33,9 +33,7 @@
       <Platform Solution="*|x64" Project="x64" />
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x86" Project="x86" />
-      <Deploy Solution="Debug-Local|x64" />
-      <Deploy Solution="Debug-Prod|x64" />
-      <Deploy Solution="Debug|x64" />
+      <Deploy Solution="*|x64" />
     </Project>
   </Folder>
 </Solution>
