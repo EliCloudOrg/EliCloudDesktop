@@ -83,9 +83,9 @@ final class StubTransport: ClientTransport, @unchecked Sendable {
         guard let reply = reply(for: operationID) else {
             throw EliCloudError(kind: .transport, underlying: "no stubbed reply for \(operationID)")
         }
-        lock.lock()
-        recorded.append(record)
-        lock.unlock()
+        lock.withLock {
+            recorded.append(record)
+        }
 
         var response = HTTPResponse(status: .init(code: reply.status))
         for (name, value) in reply.headers {

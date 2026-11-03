@@ -16,7 +16,7 @@ final class ContractReplayTests: XCTestCase {
 
     // MARK: 工具
 
-    private func client(
+    private func makeClient(
         _ fixtures: [String],
         sessionStore: SessionStore = SessionStore()
     ) throws -> (EliCloudClient, StubTransport) {
@@ -55,7 +55,7 @@ final class ContractReplayTests: XCTestCase {
     // MARK: 登录
 
     func testLoginSuccessAdoptsSession() async throws {
-        let (client, stub) = try client(["auth/login-success.json"])
+        let (client, stub) = try makeClient(["auth/login-success.json"])
         let result = try await client.sso.login(username: "alice", password: "S3cret!pass")
 
         XCTAssertEqual(result.tokenType, .bearer)
@@ -75,7 +75,7 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testLoginInvalidGrantMapsToErrorCode() async throws {
-        let (client, _) = try client(["auth/login-invalid-grant.json"])
+        let (client, _) = try makeClient(["auth/login-invalid-grant.json"])
         let failure = await error {
             _ = try await client.sso.login(username: "alice", password: "wrong")
         }
@@ -87,7 +87,7 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testLoginRateLimitedCarriesRetryAfter() async throws {
-        let (client, _) = try client(["auth/login-rate-limited.json"])
+        let (client, _) = try makeClient(["auth/login-rate-limited.json"])
         let failure = await error {
             _ = try await client.sso.login(username: "alice", password: "wrong-password")
         }
@@ -98,7 +98,7 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testLoginEmailNotVerified() async throws {
-        let (client, _) = try client(["auth/login-email-not-verified.json"])
+        let (client, _) = try makeClient(["auth/login-email-not-verified.json"])
         let failure = await error {
             _ = try await client.sso.login(username: "alice", password: "S3cret!pass")
         }
@@ -109,7 +109,7 @@ final class ContractReplayTests: XCTestCase {
     // MARK: 注册
 
     func testRegistrationStartAndStatusMachine() async throws {
-        let (client, _) = try client([
+        let (client, _) = try makeClient([
             "register/start-pending.json",
             "register/status-pending.json",
             "register/status-verified.json",
@@ -138,7 +138,7 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testRegistrationCancelAndResend() async throws {
-        let (client, _) = try client(["register/cancel.json", "register/resend.json"])
+        let (client, _) = try makeClient(["register/cancel.json", "register/resend.json"])
         try await client.sso.cancelRegistration(registrationID: "reg_examplepending")
         let resent = try await client.sso.resendRegistrationEmail(registrationID: "reg_examplepending")
         XCTAssertEqual(resent.resendAfter, 61)
@@ -148,7 +148,7 @@ final class ContractReplayTests: XCTestCase {
 
     func testUserInfoMergesIdentityIntoSession() async throws {
         let store = SessionStore()
-        let (client, _) = try client(["auth/login-success.json", "userinfo/full.json"], sessionStore: store)
+        let (client, _) = try makeClient(["auth/login-success.json", "userinfo/full.json"], sessionStore: store)
         _ = try await client.sso.login(username: "alice", password: "S3cret!pass")
         let info = try await client.sso.userInfo()
 
@@ -162,7 +162,7 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testAuthenticatedRequestCarriesBearer() async throws {
-        let (client, stub) = try client(["auth/login-success.json", "userinfo/full.json"])
+        let (client, stub) = try makeClient(["auth/login-success.json", "userinfo/full.json"])
         _ = try await client.sso.login(username: "alice", password: "S3cret!pass")
         _ = try await client.sso.userInfo()
 
@@ -174,14 +174,14 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testUserInfoWithoutEmailScope() async throws {
-        let (client, _) = try client(["userinfo/no-profile-scope.json"])
+        let (client, _) = try makeClient(["userinfo/no-profile-scope.json"])
         let info = try await client.sso.userInfo()
         XCTAssertEqual(info.sub, "u_example01")
         XCTAssertNil(info.email)
     }
 
     func testUnauthorizedWithoutSession() async throws {
-        let (client, _) = try client(["userinfo/unauthorized.json"])
+        let (client, _) = try makeClient(["userinfo/unauthorized.json"])
         let failure = await error {
             _ = try await client.sso.userInfo()
         }
@@ -191,7 +191,7 @@ final class ContractReplayTests: XCTestCase {
     // MARK: 资料与图片
 
     func testEmptyProfileDecodesNullableImageFields() async throws {
-        let (client, _) = try client(["userinfo/profile-empty.json"])
+        let (client, _) = try makeClient(["userinfo/profile-empty.json"])
         let profile = try await client.userInfo.myProfile()
         XCTAssertEqual(profile.userId, "u_example01")
         XCTAssertNil(profile.nickname)
@@ -200,7 +200,7 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testProfileUpdateAndPublicProfile() async throws {
-        let (client, _) = try client(["userinfo/profile-update.json", "userinfo/profile-other.json"])
+        let (client, _) = try makeClient(["userinfo/profile-update.json", "userinfo/profile-other.json"])
         let updated = try await client.userInfo.updateProfile(nickname: "  秋风  ", bio: " 白天写代码 ")
         XCTAssertEqual(updated.nickname, "秋风")
         let other = try await client.userInfo.profile(sub: "u_example02")
@@ -208,7 +208,7 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testProfileValidationRunsBeforeNetwork() async throws {
-        let (client, stub) = try client(["userinfo/profile-update.json"])
+        let (client, stub) = try makeClient(["userinfo/profile-update.json"])
         await XCTAssertThrowsErrorAsync {
             _ = try await client.userInfo.updateProfile(nickname: " ", bio: nil)
         }
@@ -216,19 +216,19 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testImageMetadataAndNotModified() async throws {
-        let (client, _) = try client(["userinfo/get-avatar.json"])
+        let (client, _) = try makeClient(["userinfo/get-avatar.json"])
         let image = try await client.userInfo.myImage(kind: .avatar)
         XCTAssertEqual(image?.contentType, "image/png")
         XCTAssertNotNil(image?.etag)
         XCTAssertFalse((image?.data ?? Data()).isEmpty)
 
-        let (notModifiedClient, _) = try client(["userinfo/get-avatar-not-modified.json"])
+        let (notModifiedClient, _) = try makeClient(["userinfo/get-avatar-not-modified.json"])
         let cached = try await notModifiedClient.userInfo.myImage(kind: .avatar, ifNoneMatch: "\"etag\"")
         XCTAssertNil(cached, "304 应返回 nil（走缓存）")
     }
 
     func testUploadImageTooLarge() async throws {
-        let (client, _) = try client(["userinfo/image-too-large.json"])
+        let (client, _) = try makeClient(["userinfo/image-too-large.json"])
         let failure = await error {
             _ = try await client.userInfo.uploadImage(kind: .avatar, pngData: Data([0x89, 0x50, 0x4E, 0x47]))
         }
@@ -239,13 +239,13 @@ final class ContractReplayTests: XCTestCase {
     // MARK: MC
 
     func testHealthHealthyAndDegraded() async throws {
-        let (healthy, _) = try client(["mc/health-ok.json"])
+        let (healthy, _) = try makeClient(["mc/health-ok.json"])
         let ok = try await healthy.mc.health()
         XCTAssertEqual(ok.status, .ok)
         XCTAssertEqual(ok.rcon?.reachable, true)
         XCTAssertEqual(ok.whitelistCount, 7)
 
-        let (degraded, _) = try client(["mc/health-degraded-503.json"])
+        let (degraded, _) = try makeClient(["mc/health-degraded-503.json"])
         let bad = try await degraded.mc.health()
         XCTAssertEqual(bad.status, .degraded, "503 是降级快照，必须照常解析")
         XCTAssertEqual(bad.rcon?.reachable, false)
@@ -253,7 +253,7 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testNamesListAndQuota() async throws {
-        let (client, _) = try client(["mc/names.json"])
+        let (client, _) = try makeClient(["mc/names.json"])
         let list = try await client.mc.names(includeRemoved: false)
         XCTAssertEqual(list.sub, "u_example01")
         XCTAssertEqual(list.quota?.remaining, 1)
@@ -261,17 +261,17 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testAddNameCreatedAndIdempotent() async throws {
-        let (created, _) = try client(["mc/add-name.json"])
+        let (created, _) = try makeClient(["mc/add-name.json"])
         let first = try await created.mc.add(name: "Alice_Star", note: "主账号")
         XCTAssertEqual(first.id, "mn_0001")
 
-        let (idempotent, _) = try client(["mc/add-name-idempotent.json"])
+        let (idempotent, _) = try makeClient(["mc/add-name-idempotent.json"])
         let again = try await idempotent.mc.add(name: "Alice_Star", note: "主账号")
         XCTAssertEqual(again.id, "mn_0001")
     }
 
     func testAddNameQuotaExceeded() async throws {
-        let (client, _) = try client(["mc/quota-exceeded.json"])
+        let (client, _) = try makeClient(["mc/quota-exceeded.json"])
         let failure = await error {
             _ = try await client.mc.add(name: "Alice_Star", note: "主账号")
         }
@@ -280,11 +280,11 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testRemoveNameAndNotFound() async throws {
-        let (client, _) = try client(["mc/remove.json"])
+        let (client, _) = try makeClient(["mc/remove.json"])
         let removed = try await client.mc.remove(id: "mn_0001")
         XCTAssertEqual(removed.status, .removed)
 
-        let (missing, _) = try client(["mc/not-found.json"])
+        let (missing, _) = try makeClient(["mc/not-found.json"])
         let failure = await error {
             _ = try await missing.mc.remove(id: "mn_9999")
         }
@@ -295,7 +295,7 @@ final class ContractReplayTests: XCTestCase {
     // MARK: 错误信封
 
     func testNonJSONErrorBodyKeepsOnlyStatus() async throws {
-        let (client, _) = try client(["errors/non-json.json"])
+        let (client, _) = try makeClient(["errors/non-json.json"])
         let failure = await error {
             _ = try await client.mc.names()
         }
@@ -305,7 +305,7 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testUnicodeErrorDescriptionDecodes() async throws {
-        let (client, _) = try client(["errors/unicode.json"])
+        let (client, _) = try makeClient(["errors/unicode.json"])
         let failure = await error {
             _ = try await client.userInfo.updateProfile(nickname: "秋风", bio: nil)
         }
@@ -314,7 +314,7 @@ final class ContractReplayTests: XCTestCase {
     }
 
     func testIdentityAndServiceList() async throws {
-        let (client, _) = try client(["mc/identity.json"])
+        let (client, _) = try makeClient(["mc/identity.json"])
         let identity = try await client.mc.identity()
         XCTAssertEqual(identity.sub, "u_example01")
     }

@@ -21,12 +21,14 @@ final class SessionStoreTests: XCTestCase {
         await store.adopt(makeSession())
         let current = await store.current
         XCTAssertEqual(current?.subject, "u_example01")
-        XCTAssertEqual(await store.accessToken(), "at_example")
+        let token = await store.accessToken()
+        XCTAssertEqual(token, "at_example")
 
         await store.clear()
         let cleared = await store.current
         XCTAssertNil(cleared)
-        XCTAssertNil(await store.accessToken())
+        let clearedToken = await store.accessToken()
+        XCTAssertNil(clearedToken)
     }
 
     func testExpiredTokenIsNotUsable() async {
