@@ -9,6 +9,10 @@ settings:
   base:
     SWIFT_VERSION: "5.10"
     SWIFT_STRICT_CONCURRENCY: targeted
+    # 只构建当前 runner 的架构：SwiftPM 依赖（EliCloudSDK/OpenAPIRuntime）按架构构建，
+    # Debug/Release 混用通用二进制会出现 “could not find module for x86_64”。
+    # Universal 发布（§4.1）以后单独出 Release 配置再做。
+    ONLY_ACTIVE_ARCH: "YES"
     CODE_SIGNING_ALLOWED: "NO"
     CODE_SIGN_IDENTITY: "-"
     DEVELOPMENT_TEAM: ""

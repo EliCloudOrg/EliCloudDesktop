@@ -15,7 +15,8 @@ struct AuthFlowView: View {
 
     var body: some View {
         ZStack {
-            DesignTokens.colorSurfaceBase
+            Rectangle()
+                .fill(DesignTokens.colorSurfaceBase)
                 .ignoresSafeArea()
 
             VStack(spacing: DesignTokens.space4) {

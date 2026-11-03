@@ -109,6 +109,7 @@ jobs:
 
       - name: Build + test
         run: |
+          set -o pipefail
           mkdir -p artifacts
           xcodebuild test \
             -project clients/macos/EliCloud.xcodeproj \
@@ -122,6 +123,7 @@ jobs:
       # 交付产物：未签名的 Release .app（Universal 架构尚未配置，先给当前 runner 架构）。
       - name: Build Release app
         run: |
+          set -o pipefail
           xcodebuild build \
             -project clients/macos/EliCloud.xcodeproj \
             -scheme EliCloud \
@@ -136,9 +138,10 @@ jobs:
         run: |
           APP="clients/macos/DerivedData/Build/Products/Release/EliCloud.app"
           test -d "$APP"
+          test -x "$APP/Contents/MacOS/EliCloud"
           ditto -c -k --sequesterRsrc --keepParent "$APP" artifacts/EliCloud-macos-unsigned.zip
           ls -lh artifacts/EliCloud-macos-unsigned.zip
-          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist" > artifacts/EliCloud-version.txt
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist" > artifacts/EliCloud-version.txt || true
           uname -m >> artifacts/EliCloud-version.txt
 
       - name: Upload app artifact

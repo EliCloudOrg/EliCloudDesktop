@@ -126,13 +126,14 @@ final class AppState: ObservableObject {
     func refreshProfile() async {
         guard isSignedIn else { return }
         profile = try? await client.userInfo.myProfile()
+        // `try?` 对返回可选值的函数会拍平，这里拿到的就是 ProfileImage?。
         if let image = try? await client.userInfo.myImage(kind: .avatar) {
-            avatar = image?.data
+            avatar = image.data
         } else {
             avatar = nil
         }
         if let image = try? await client.userInfo.myImage(kind: .banner) {
-            banner = image?.data
+            banner = image.data
         } else {
             banner = nil
         }
