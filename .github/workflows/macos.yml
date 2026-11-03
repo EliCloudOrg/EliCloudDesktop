@@ -10,6 +10,10 @@ on:
       - "tools/**"
       - "contracts/**"
       - ".github/workflows/macos.yml"
+  push:
+    paths:
+      - "clients/macos/**"
+      - ".github/workflows/macos.yml"
   workflow_dispatch:
 
 permissions:
@@ -66,7 +70,7 @@ jobs:
           if-no-files-found: ignore
 
   build:
-    name: SwiftUI hello-world
+    name: macOS 客户端（EliCloud.app）
     runs-on: macos-15
     needs: sdk
     steps:
@@ -103,8 +107,8 @@ jobs:
         run: |
           mkdir -p artifacts
           xcodebuild test \
-            -project clients/macos/EliCloudHello.xcodeproj \
-            -scheme EliCloudHello \
+            -project clients/macos/EliCloud.xcodeproj \
+            -scheme EliCloud \
             -destination "platform=macOS" \
             -derivedDataPath clients/macos/DerivedData \
             CODE_SIGNING_ALLOWED=NO \

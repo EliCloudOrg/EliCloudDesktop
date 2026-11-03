@@ -1,0 +1,61 @@
+name: EliCloud
+options:
+  minimumXcodeGenVersion: "2.44.1"
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    SWIFT_STRICT_CONCURRENCY: targeted
+    CODE_SIGNING_ALLOWED: "NO"
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+    ENABLE_USER_SCRIPT_SANDBOXING: "YES"
+    GENERATE_INFOPLIST_FILE: "YES"
+    INFOPLIST_KEY_CFBundleDevelopmentRegion: "zh-Hans"
+    INFOPLIST_KEY_LSMinimumSystemVersion: "14.0"
+    INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 EliCloud"
+packages:
+  EliCloudSDK:
+    path: ../../sdks/swift
+targets:
+  EliCloud:
+    type: application
+    platform: macOS
+    sources:
+      - EliCloud
+      - Generated
+      - Resources
+      # 错误码 → 文案 key 的唯一真源，运行时读 bundle 里的副本（不手写第二份映射）。
+      - path: ../../contracts/errors.json
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cloud.elipese.EliCloud
+        PRODUCT_NAME: EliCloud
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        INFOPLIST_KEY_CFBundleDisplayName: EliCloud
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        COMBINE_HIDPI_IMAGES: "YES"
+        ENABLE_APP_SANDBOX: "YES"
+        ENABLE_HARDENED_RUNTIME: "YES"
+        CODE_SIGN_ENTITLEMENTS: EliCloud/EliCloud.entitlements
+    dependencies:
+      - package: EliCloudSDK
+    scheme:
+      testTargets:
+        - EliCloudTests
+  EliCloudTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - EliCloudTests
+    dependencies:
+      - target: EliCloud
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cloud.elipese.EliCloudTests
+        GENERATE_INFOPLIST_FILE: "YES"
