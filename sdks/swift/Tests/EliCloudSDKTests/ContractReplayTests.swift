@@ -20,12 +20,17 @@ final class ContractReplayTests: XCTestCase {
         _ fixtures: [String],
         sessionStore: SessionStore = SessionStore()
     ) throws -> (EliCloudClient, StubTransport) {
-        var replies: [String: StubTransport.Reply] = [:]
+        var queues: [String: [StubTransport.Reply]] = [:]
         for relative in fixtures {
             let fixture = try Fixture.load(relative)
-            replies[fixture.operationID] = .init(fixture: fixture)
+            queues[fixture.operationID, default: []].append(.init(fixture: fixture))
         }
-        let stub = StubTransport(replies: replies)
+        let stub = StubTransport()
+        for (operationID, replies) in queues {
+            for reply in replies {
+                stub.enqueue(reply, for: operationID)
+            }
+        }
         let client = EliCloudClient(
             baseURL: baseURL,
             userAgent: "EliCloudSDKTests/1.0 (test)",

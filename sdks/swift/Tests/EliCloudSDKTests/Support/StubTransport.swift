@@ -40,13 +40,21 @@ final class StubTransport: ClientTransport, @unchecked Sendable {
     }
 
     private let lock = NSRecursiveLock()
-    private var replies: [String: Reply]
+    /// 每个 operationId 一个应答队列：同一端点被调用多次时按顺序返回（注册轮询要用）。
+    private var replies: [String: [Reply]]
     private var recorded: [RecordedRequest] = []
     private var fallback: Reply?
 
     init(replies: [String: Reply] = [:], fallback: Reply? = nil) {
-        self.replies = replies
+        self.replies = replies.mapValues { [$0] }
         self.fallback = fallback
+    }
+
+    /// 按顺序追加应答（同一 operationId 的多次调用）。
+    func enqueue(_ reply: Reply, for operationID: String) {
+        lock.withLock {
+            replies[operationID, default: []].append(reply)
+        }
     }
 
     /// 当前收到的所有请求（按到达顺序）。
@@ -57,9 +65,14 @@ final class StubTransport: ClientTransport, @unchecked Sendable {
     }
 
     func reply(for operationID: String) -> Reply? {
-        lock.lock()
-        defer { lock.unlock() }
-        return replies[operationID] ?? fallback
+        lock.withLock {
+            if var queue = replies[operationID], !queue.isEmpty {
+                let next = queue.removeFirst()
+                replies[operationID] = queue
+                return next
+            }
+            return fallback
+        }
     }
 
     func send(
