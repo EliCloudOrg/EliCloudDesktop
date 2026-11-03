@@ -64,6 +64,8 @@ class PinTests(unittest.TestCase):
         for token in ("$WORK/contracts/openapi.yaml", "$CACHE_ROOT", "$OUTPUT_REL"):
             self.assertIn(token, script)
         self.assertIn("--config", script)
+        # swift-openapi-generator 的文档路径是位置参数；`--input` 不存在（会 exit 64）。
+        self.assertNotIn("--input", script)
 
 
 if __name__ == "__main__":

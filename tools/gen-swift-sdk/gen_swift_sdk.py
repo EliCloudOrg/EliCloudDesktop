@@ -71,8 +71,8 @@ fi
 swift run --package-path "$generator" --scratch-path "$CACHE_ROOT/.build-$GENERATOR_VERSION" \\
   -c release swift-openapi-generator generate \\
   --config "$WORK/tools/gen-swift-sdk/openapi-generator-config.yaml" \\
-  --input "$WORK/contracts/openapi.yaml" \\
-  --output-directory "$WORK/$OUTPUT_REL"
+  --output-directory "$WORK/$OUTPUT_REL" \\
+  "$WORK/contracts/openapi.yaml"
 """
 
 
