@@ -12,6 +12,7 @@
 //
 
 import Foundation
+import OpenAPIRuntime
 
 #if canImport(FoundationNetworking)
 import FoundationNetworking
@@ -126,6 +127,26 @@ extension EliCloudError {
     /// 响应体解析失败（契约与实现对不上，属于事故）。
     public static func decoding(_ error: Error, status: Int? = nil) -> EliCloudError {
         EliCloudError(kind: .decoding, status: status, underlying: String(describing: error))
+    }
+
+    /// 把任意错误归一成 `EliCloudError`。
+    ///
+    /// 生成的 `Client` 会把中间件/传输抛出的错误包进 `OpenAPIRuntime.ClientError`
+    /// （`underlyingError` 才是原始错误），这里逐层拆开。
+    public static func normalized(_ error: Error) -> EliCloudError {
+        if let eliCloudError = error as? EliCloudError {
+            return eliCloudError
+        }
+        if let clientError = error as? ClientError {
+            return normalized(clientError.underlyingError)
+        }
+        if let runtimeError = error as? RuntimeError {
+            return EliCloudError(
+                kind: .decoding,
+                underlying: String(describing: runtimeError)
+            )
+        }
+        return fromTransport(error)
     }
 
     private struct Envelope: Decodable {

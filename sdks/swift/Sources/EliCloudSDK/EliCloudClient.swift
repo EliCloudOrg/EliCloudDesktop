@@ -85,6 +85,16 @@ public struct EliCloudClient: Sendable {
 
 // MARK: - 共享工具
 
+/// 统一错误边界：生成的 `Client` 会把中间件抛的错误包成 `ClientError`，
+/// 这里拆包并保证调用方只会拿到 `EliCloudError`。
+func mapErrors<T>(_ operation: () async throws -> T) async throws -> T {
+    do {
+        return try await operation()
+    } catch {
+        throw EliCloudError.normalized(error)
+    }
+}
+
 enum EliCloudEndpoint {
 
     /// 契约里没有、但确实收到了的响应（例如方法/状态码不匹配）。

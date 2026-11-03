@@ -52,7 +52,7 @@ struct Fixture {
         var body = Data()
         if let json = response["json"] {
             body = try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
-        } else if let rawFile = response["rawFile"] as? String {
+        } else if let rawFile = (response["rawFile"] as? String) ?? (response["file"] as? String) {
             body = try Data(contentsOf: url.deletingLastPathComponent().appendingPathComponent(rawFile))
         }
 

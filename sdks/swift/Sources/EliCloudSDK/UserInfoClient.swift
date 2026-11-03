@@ -37,7 +37,7 @@ public struct UserInfoClient: Sendable {
 
     /// 读取自己的资料。没有记录也是 200，`nickname`/`bio`/图片字段为 nil。
     public func myProfile() async throws -> Components.Schemas.UserProfile {
-        let output = try await client.getMyProfile(.init())
+        let output = try await mapErrors { try await client.getMyProfile(.init()) }
         guard case .ok(let ok) = output else {
             throw EliCloudEndpoint.unexpected("getMyProfile")
         }
@@ -57,7 +57,7 @@ public struct UserInfoClient: Sendable {
         let input = Operations.UpdateMyProfile.Input(
             body: .json(.init(nickname: normalizedNickname, bio: normalizedBio))
         )
-        let output = try await client.updateMyProfile(input)
+        let output = try await mapErrors { try await client.updateMyProfile(input) }
         guard case .ok(let ok) = output else {
             throw EliCloudEndpoint.unexpected("updateMyProfile")
         }
@@ -66,7 +66,7 @@ public struct UserInfoClient: Sendable {
 
     /// 读取其他用户的公开资料（没有记录 → 404 `profile_not_found`）。
     public func profile(sub: String) async throws -> Components.Schemas.UserProfile {
-        let output = try await client.getProfile(.init(path: .init(sub: sub)))
+        let output = try await mapErrors { try await client.getProfile(.init(path: .init(sub: sub))) }
         guard case .ok(let ok) = output else {
             throw EliCloudEndpoint.unexpected("getProfile")
         }
@@ -84,7 +84,7 @@ public struct UserInfoClient: Sendable {
             path: .init(kind: Components.Parameters.ProfileKind(kind)),
             headers: .init(ifNoneMatch: ifNoneMatch)
         )
-        let output = try await client.getMyProfileImage(input)
+        let output = try await mapErrors { try await client.getMyProfileImage(input) }
         switch output {
         case .ok(let ok):
             return try await Self.profileImage(from: ok.body, etag: ok.headers.eTag)
@@ -114,7 +114,7 @@ public struct UserInfoClient: Sendable {
             path: .init(kind: Components.Parameters.ProfileKind(kind)),
             body: .multipartForm([part])
         )
-        let output = try await client.uploadMyProfileImage(input)
+        let output = try await mapErrors { try await client.uploadMyProfileImage(input) }
         guard case .ok(let ok) = output else {
             throw EliCloudEndpoint.unexpected("uploadMyProfileImage")
         }
@@ -123,7 +123,7 @@ public struct UserInfoClient: Sendable {
 
     /// 删除头像 / 头图（幂等：本来就没有时 `changed == false`）。
     public func deleteImage(kind: ProfileImageKind) async throws -> Components.Schemas.DeleteImageResponse {
-        let output = try await client.deleteMyProfileImage(
+        let output = try await mapErrors { try await client.deleteMyProfileImage( }
             .init(path: .init(kind: Components.Parameters.ProfileKind(kind)))
         )
         guard case .ok(let ok) = output else {
@@ -134,7 +134,7 @@ public struct UserInfoClient: Sendable {
 
     /// 读取其他用户的头像 / 头图；304 返回 nil。
     public func image(sub: String, kind: ProfileImageKind) async throws -> ProfileImage? {
-        let output = try await client.getProfileImage(
+        let output = try await mapErrors { try await client.getProfileImage( }
             .init(path: .init(sub: sub, kind: Components.Parameters.ProfileKind(kind)))
         )
         switch output {

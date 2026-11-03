@@ -30,7 +30,7 @@ public struct SsoClient: Sendable {
         let input = Operations.Login.Input(
             body: .json(.init(username: username, password: password))
         )
-        let output = try await client.login(input)
+        let output = try await mapErrors { try await client.login(input) }
         guard case .ok(let ok) = output else {
             throw EliCloudEndpoint.unexpected("login")
         }
@@ -64,7 +64,7 @@ public struct SsoClient: Sendable {
         let input = Operations.RegisterStart.Input(
             body: .json(.init(username: username, password: password, email: email))
         )
-        let output = try await client.registerStart(input)
+        let output = try await mapErrors { try await client.registerStart(input) }
         guard case .accepted(let accepted) = output else {
             throw EliCloudEndpoint.unexpected("registerStart")
         }
@@ -78,7 +78,7 @@ public struct SsoClient: Sendable {
         let input = Operations.GetRegistrationStatus.Input(
             body: .json(.init(registrationId: registrationID))
         )
-        let output = try await client.getRegistrationStatus(input)
+        let output = try await mapErrors { try await client.getRegistrationStatus(input) }
         guard case .ok(let ok) = output else {
             throw EliCloudEndpoint.unexpected("getRegistrationStatus")
         }
@@ -92,7 +92,7 @@ public struct SsoClient: Sendable {
         let input = Operations.ResendRegistrationEmail.Input(
             body: .json(.init(registrationId: registrationID))
         )
-        let output = try await client.resendRegistrationEmail(input)
+        let output = try await mapErrors { try await client.resendRegistrationEmail(input) }
         guard case .accepted(let accepted) = output else {
             throw EliCloudEndpoint.unexpected("resendRegistrationEmail")
         }
@@ -104,7 +104,7 @@ public struct SsoClient: Sendable {
         let input = Operations.CancelRegistration.Input(
             body: .json(.init(registrationId: registrationID))
         )
-        let output = try await client.cancelRegistration(input)
+        let output = try await mapErrors { try await client.cancelRegistration(input) }
         guard case .noContent = output else {
             throw EliCloudEndpoint.unexpected("cancelRegistration")
         }
@@ -143,7 +143,7 @@ public struct SsoClient: Sendable {
     /// 读取身份（权威来源），并把 `sub`/用户名/邮箱/scope 合并进会话。
     @discardableResult
     public func userInfo() async throws -> Components.Schemas.UserInfoResponse {
-        let output = try await client.getUserInfo(.init())
+        let output = try await mapErrors { try await client.getUserInfo(.init()) }
         guard case .ok(let ok) = output else {
             throw EliCloudEndpoint.unexpected("getUserInfo")
         }
@@ -173,7 +173,7 @@ public struct SsoClient: Sendable {
             )
         }
         return try await refresher.perform { [client, sessionStore] in
-            let output = try await client.refreshToken(.init(body: .json(.init(refreshToken: token))))
+            let output = try await mapErrors { try await client.refreshToken(.init(body: .json(.init(refreshToken: token)))) }
             guard case .ok(let ok) = output else {
                 throw EliCloudEndpoint.unexpected("refreshToken")
             }
