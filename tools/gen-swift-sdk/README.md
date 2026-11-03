@@ -84,3 +84,5 @@ python tools/gen-swift-sdk/gen_swift_sdk.py --check
 把 `Generated/` 作为 artifact 输出，并打印生成器诊断——没有本机 Swift 时用它重新生成。
 
 `contracts/**`、`tools/gen-swift-sdk/**`、`sdks/swift/**` 任一变更都会触发。
+
+<!-- 生成物由 swift-sdk-codegen workflow 产出后入库；本行仅为触发一次重新生成。 -->
