@@ -12,6 +12,12 @@ name: swift-sdk-codegen
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "contracts/openapi.yaml"
+      - "tools/gen-swift-sdk/**"
+      - "sdks/swift/Package.swift"
+      - ".github/workflows/swift-sdk-codegen.yml"
 
 permissions:
   contents: read
