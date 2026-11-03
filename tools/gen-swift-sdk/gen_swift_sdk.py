@@ -71,6 +71,7 @@ fi
 swift run --package-path "$generator" --scratch-path "$CACHE_ROOT/.build-$GENERATOR_VERSION" \\
   -c release swift-openapi-generator generate \\
   --config "$WORK/tools/gen-swift-sdk/openapi-generator-config.yaml" \\
+  --diagnostics-output-path "$CACHE_ROOT/diagnostics.yaml" \\
   --output-directory "$WORK/$OUTPUT_REL" \\
   "$WORK/contracts/openapi.yaml"
 """
@@ -199,6 +200,26 @@ def generate_into(output: Path, runner: str, *, insecure_git: bool) -> None:
         run_docker(output_rel, insecure_git=insecure_git)
     else:
         run_native(output_rel, insecure_git=insecure_git)
+    report_diagnostics()
+
+
+DIAGNOSTICS = CACHE / "diagnostics.yaml"
+
+
+def report_diagnostics() -> None:
+    """把生成器的 warnings（例如某个 schema 被跳过）打到 CI 日志里。
+
+    生成器对不支持/有歧义的 schema 是“跳过 + 警告”而不是失败，所以不看诊断
+    就可能在 SDK 里悄悄少掉字段。这里强制可视化。
+    """
+    if not DIAGNOSTICS.is_file():
+        return
+    text = DIAGNOSTICS.read_text(encoding="utf-8", errors="replace").strip()
+    if not text:
+        log("生成器诊断：无警告")
+        return
+    print("[gen-swift-sdk] 生成器诊断（warnings）：", flush=True)
+    print(text, flush=True)
 
 
 def swift_files(directory: Path) -> dict[str, str]:
