@@ -16,7 +16,7 @@ on:
     paths:
       - "contracts/openapi.yaml"
       - "tools/gen-swift-sdk/**"
-      - "sdks/swift/Package.swift"
+      - "sdks/swift/**"
       - ".github/workflows/swift-sdk-codegen.yml"
 
 permissions:
