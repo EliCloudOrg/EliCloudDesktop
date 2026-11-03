@@ -1,0 +1,48 @@
+name: swift-sdk-codegen
+
+# 一次性/按需重新生成 Swift SDK 的生成物（不想在本机装 Swift 时用）。
+#
+# 日常不需要跑这个：macos.yml 里的 `gen_swift_sdk.py --check` 会保证
+# Generated/ 与 contracts/openapi.yaml 一致。这个 workflow 只负责把
+# “从契约重新生成”这件事放到 CI 上，产物以 artifact 形式给出，人工入库。
+#
+# 用法：
+#   gh workflow run swift-sdk-codegen.yml --ref <branch>
+#   gh run download <run-id> -n swift-sdk-generated -D <dir>
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SWIFT_VERSION: "6.1"
+  PYTHONUTF8: "1"
+
+jobs:
+  generate:
+    name: Generate Swift SDK from OpenAPI
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: ${{ env.SWIFT_VERSION }}
+
+      - name: Show toolchain
+        run: swift --version
+
+      - name: Generate (swift-openapi-generator, pinned in tools/gen-swift-sdk)
+        run: python tools/gen-swift-sdk/gen_swift_sdk.py --runner native
+
+      - name: Verify generated output is deterministic
+        run: python tools/gen-swift-sdk/gen_swift_sdk.py --check --runner native
+
+      - name: Upload generated sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: swift-sdk-generated
+          path: sdks/swift/Sources/EliCloudSDK/Generated/
+          if-no-files-found: error

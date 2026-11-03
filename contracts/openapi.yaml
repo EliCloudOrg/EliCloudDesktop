@@ -1,0 +1,2146 @@
+openapi: 3.1.0
+info:
+  title: EliCloud Client API
+  version: 1.0.0
+  summary: EliCloud 客户端可见的 HTTP 契约（SSO / userinfo / MC / core）。
+  description: |
+    本文件是**唯一协议源**。四个平台客户端（Windows / macOS / Android / Linux）与
+    各语言 SDK 只能依赖这里的端点、字段与错误码，不得私自新增。
+
+    ## 范围
+
+    - 只包含**客户端可见**端点。管理端点（`/auth/v1/clients*`、`/mc/v1/admin/*`）
+      与内部回调（`/auth/internal/email/verification`）**不在**本契约内，绝不生成到客户端 SDK。
+    - `servers` 里的地址只是**示意**：真实入口由各端在构建时注入、运行时只读，
+      不得出现在 fixtures、示例或界面中。
+    - 字段名与线上 JSON 完全一致（snake_case）。各端自己在传输层做命名映射，
+      不要在契约里改写成 camelCase。
+
+    ## 约定
+
+    - 错误信封统一为 `EliCloudError`：`{"error": "...", "error_description": "..."}`；
+      非 JSON 错误体只保留 HTTP 状态码。
+    - `429` / `503` 可能带 `Retry-After`（秒数或 HTTP-date），客户端必须解析。
+    - 错误码 → 用户文案的映射只在 `errors.json` + `copy/zh-CN.json` 维护。
+    - 标记 `x-elicloud-status: planned` 的端点尚未上线，客户端可以按契约实现，
+      但不得依赖其可用性。
+  contact:
+    name: EliCloud Contract Owner
+    url: https://api.example.com
+  license:
+    name: Proprietary
+x-contract-version: 1.0.0
+x-contract-source: contracts/VERSION
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+servers:
+  - url: https://api.example.com
+    description: |
+      示意入口（不代表任何真实部署）。真实入口由构建配置注入；客户端不得展示、
+      记录或回退到任何默认地址。
+tags:
+  - name: Auth
+    description: 账号中心（对外前缀 `/auth`）：注册、登录、刷新、UserInfo、OIDC。
+  - name: UserInfo
+    description: 个人资料（对外前缀 `/userinfo`）：昵称、简介、头像、头图。
+  - name: MC
+    description: MC 服务器白名单（对外前缀 `/mc`）。
+  - name: Core
+    description: 平台核心 API（对外前缀 `/core`）。**尚未上线**，仅作对接预留。
+security: []
+paths:
+  # ============================================================ Auth / 注册
+  /auth/register:
+    post:
+      operationId: registerStart
+      tags: [Auth]
+      summary: 发起注册（只发验证邮件，不创建账号）
+      description: |
+        成功后返回 202 与 `RegistrationPending`。调用方必须保存 `registration_id`
+        并轮询 `/auth/register/status`；邮箱确认后账号才会创建。
+
+        用户名只能是用户名（不能是邮箱），长度 3–32，`^[A-Za-z0-9][A-Za-z0-9_.-]*$`。
+        密码 8–64 字符、UTF-8 不超过 72 字节、必须同时含字母与数字、不得是常见弱口令。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              username: alice
+              password: S3cret!pass
+              email: alice@example.com
+      responses:
+        '202':
+          description: 已发出验证邮件，等待用户确认。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationPending'
+              example:
+                registration_id: reg_examplepending
+                status: pending
+                email_masked: a***@example.com
+                expires_at: '2026-11-01T20:00:00Z'
+                resend_after: 60
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /auth/register/status:
+    post:
+      operationId: getRegistrationStatus
+      tags: [Auth]
+      summary: 查询待验证注册的状态
+      description: |
+        轮询接口。`status` 取值 `pending` / `verified` / `expired` / `failed`。
+        只有 `verified` 会带 `user`；`expired` / `failed` 会带 `reason`。
+        已取消的注册按不存在处理（404 `registration_not_found`）。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRef'
+            example:
+              registration_id: reg_examplepending
+      responses:
+        '200':
+          description: 当前状态快照。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationStatus'
+              examples:
+                pending:
+                  value:
+                    registration_id: reg_examplepending
+                    status: pending
+                    email_masked: a***@example.com
+                    expires_at: '2026-11-01T20:00:00Z'
+                    resend_after: 42
+                verified:
+                  value:
+                    registration_id: reg_examplepending
+                    status: verified
+                    email_masked: a***@example.com
+                    expires_at: '2026-11-01T20:00:00Z'
+                    resend_after: 0
+                    user:
+                      id: u_example01
+                      username: alice
+                      email: alice@example.com
+                      email_verified: true
+                      created_at: '2026-11-01T19:41:00Z'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /auth/register/resend:
+    post:
+      operationId: resendRegistrationEmail
+      tags: [Auth]
+      summary: 重发验证邮件
+      description: |
+        受冷却限制：`resend_after > 0` 时返回 429 并带 `Retry-After`。
+        已验证的注册返回 409 `already_verified`。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRef'
+            example:
+              registration_id: reg_examplepending
+      responses:
+        '202':
+          description: 已重新发出验证邮件。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationPending'
+              example:
+                registration_id: reg_examplepending
+                status: pending
+                email_masked: a***@example.com
+                expires_at: '2026-11-01T20:10:00Z'
+                resend_after: 61
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /auth/register/cancel:
+    post:
+      operationId: cancelRegistration
+      tags: [Auth]
+      summary: 取消待验证注册
+      description: |
+        幂等：不存在或已取消都返回 204。已验证的账号返回 409 `already_verified`
+        （账号已经存在，不能撤销）。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRef'
+            example:
+              registration_id: reg_examplepending
+      responses:
+        '204':
+          description: 已取消（或本来就不存在）。
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  # ============================================================== Auth / 登录
+  /auth/login:
+    post:
+      operationId: login
+      tags: [Auth]
+      summary: 密码直连登录
+      description: |
+        `username` 字段收「登录标识」：用户名或邮箱都行。
+
+        失败**不区分**账号不存在与密码错误（统一 401 `invalid_grant`）。
+        密码正确但邮箱未验证是唯一例外：403 `email_not_verified`。
+
+        登录成功后必须再调用 `/auth/userinfo`：`user` 只是便利字段，身份以 UserInfo 为准。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: alice
+              password: S3cret!pass
+      responses:
+        '200':
+          description: 令牌已签发。
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResult'
+              example:
+                access_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.example.signature
+                token_type: Bearer
+                expires_in: 3600
+                refresh_token: rt_example_refresh_token
+                scope: openid profile email mc:whitelist userinfo:read userinfo:write
+                user:
+                  id: u_example01
+                  username: alice
+                  email: alice@example.com
+                  email_verified: true
+                  created_at: '2026-11-01T19:00:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /auth/refresh:
+    post:
+      operationId: refreshToken
+      tags: [Auth]
+      summary: 私有刷新（轮换 refresh token）
+      description: |
+        每次调用都会轮换 `refresh_token`，旧令牌立即失效。**重放旧令牌会被判为窃取，
+        整条令牌链立刻全部撤销**，用户必须重新登录 —— 所以不要并发刷新。
+
+        绑定了 `client_id` 的 OIDC 令牌不能在这里兑换，要走 `POST /auth/token`。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+            example:
+              refresh_token: rt_example_refresh_token
+      responses:
+        '200':
+          description: 已轮换。
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResult'
+              example:
+                access_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.rotated.signature
+                token_type: Bearer
+                expires_in: 3600
+                refresh_token: rt_example_rotated_token
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  # =========================================================== Auth / UserInfo
+  /auth/userinfo:
+    get:
+      operationId: getUserInfo
+      tags: [Auth]
+      summary: 读取当前用户身份（GET）
+      description: |
+        身份权威来源。claim 按 access token 的 `scope` 过滤：`sub` 恒有，
+        `profile` scope 才有 `preferred_username`，`email` scope 才有 `email`。
+        平台不再返回非标准的 `username` 字段。
+
+        **不能**传 `id_token`（其 `aud` 是 client_id，会被 401 拒绝）。
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 身份与令牌 scope。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoResponse'
+              example:
+                sub: u_example01
+                preferred_username: alice
+                email: alice@example.com
+                email_verified: true
+                scope: openid profile email
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      operationId: postUserInfo
+      tags: [Auth]
+      summary: 读取当前用户身份（POST，空 body）
+      description: |
+        OIDC 要求 GET 与 POST 两种都支持。代理对 GET 缓存不当时用 POST。
+        语义与 `getUserInfo` 完全相同。
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 身份与令牌 scope。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoResponse'
+              example:
+                sub: u_example01
+                preferred_username: alice
+                scope: openid profile
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /auth/.well-known/openid-configuration:
+    get:
+      operationId: getOidcDiscovery
+      tags: [Auth]
+      summary: OIDC 发现文档（匿名）
+      description: |
+        核对「目标地址到底是什么形态」最可靠的依据：`issuer` 必须与实际对外地址逐字一致。
+        SDK 默认不依赖它拼端点，但它是运维自检手段。
+      security: []
+      responses:
+        '200':
+          description: 发现文档。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: public, max-age=300
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcDiscoveryDocument'
+              example:
+                issuer: https://api.example.com/auth
+                authorization_endpoint: https://api.example.com/auth/authorize
+                token_endpoint: https://api.example.com/auth/token
+                userinfo_endpoint: https://api.example.com/auth/userinfo
+                jwks_uri: https://api.example.com/auth/.well-known/jwks.json
+                device_authorization_endpoint: https://api.example.com/auth/device_authorization
+                end_session_endpoint: https://api.example.com/auth/logout
+                response_types_supported: [code]
+                response_modes_supported: [query]
+                grant_types_supported:
+                  - authorization_code
+                  - refresh_token
+                  - urn:ietf:params:oauth:grant-type:device_code
+                code_challenge_methods_supported: [S256]
+                token_endpoint_auth_methods_supported: [none, client_secret_basic, client_secret_post]
+                id_token_signing_alg_values_supported: [RS256]
+                subject_types_supported: [public]
+                scopes_supported:
+                  - openid
+                  - profile
+                  - email
+                  - offline_access
+                  - mc:whitelist
+                  - files:read
+                  - files:write
+                  - userinfo:read
+                  - userinfo:write
+                claims_supported: [sub, preferred_username, email, email_verified]
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/.well-known/jwks.json:
+    get:
+      operationId: getJwks
+      tags: [Auth]
+      summary: 公钥集（匿名）
+      description: 业务服务验签 access token / id_token 用；客户端缓存 5 分钟。
+      security: []
+      responses:
+        '200':
+          description: JWKS。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: public, max-age=300
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JwksDocument'
+              example:
+                keys:
+                  - kty: RSA
+                    kid: '2026-01'
+                    use: sig
+                    alg: RS256
+                    n: sXchDAexample0example1example2
+                    e: AQAB
+        '500':
+          $ref: '#/components/responses/InternalError'
+  # ============================================================ Auth / OIDC（未来）
+  /auth/authorize:
+    get:
+      operationId: authorize
+      tags: [Auth]
+      summary: 授权码 + PKCE 授权端点（浏览器跳转）
+      description: |
+        **浏览器跳转语义**，不是 Bearer 调用：成功 302 回跳 `redirect_uri?code=...&state=...`。
+        公开客户端必须带 `code_challenge`（`S256`，`plain` 被显式拒绝）。
+
+        前提：客户端已在 SSO 静态注册，`redirect_uri` 必须与注册值逐字一致。
+        `prompt=none` 且无会话时回跳 `error=login_required`。
+      security: []
+      parameters:
+        - name: response_type
+          in: query
+          required: true
+          schema:
+            type: string
+            const: code
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+        - name: scope
+          in: query
+          required: true
+          schema:
+            type: string
+            example: openid profile email
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: nonce
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: code_challenge
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: code_challenge_method
+          in: query
+          required: false
+          schema:
+            type: string
+            const: S256
+        - name: prompt
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [login, none]
+      responses:
+        '302':
+          description: 回跳客户端（带 `code` 或 `error`）。
+          headers:
+            Location:
+              schema:
+                type: string
+                example: https://desktop.example.com/callback?code=ac_example&state=st_example
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+        '400':
+          description: 请求不合法（渲染登录页/错误页，不是 JSON 信封）。
+          content:
+            text/html:
+              schema:
+                type: string
+              example: <!doctype html><title>EliCloud</title><p>请求不合法</p>
+  /auth/token:
+    post:
+      operationId: token
+      tags: [Auth]
+      summary: 令牌端点（授权码 / 刷新 / 设备码）
+      description: |
+        `application/x-www-form-urlencoded`。客户端认证三选一且不混用：
+        `client_id`（公开客户端）、`client_secret_basic`、`client_secret_post`；
+        同一次请求既用 Basic 又带表单 secret 会被判 `invalid_request`。
+
+        - `grant_type=authorization_code`：换令牌（校验 code 归属、redirect_uri 逐字一致、PKCE）。
+        - `grant_type=refresh_token`：**强制客户端绑定**，scope 只能收窄不能扩大。
+        - `grant_type=urn:ietf:params:oauth:grant-type:device_code`：轮询设备码。
+
+        设备码轮询的 `authorization_pending` / `slow_down` 是**正常轮询状态**，
+        不应让客户端报错，而应继续按 `interval` 轮询。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+            examples:
+              authorizationCode:
+                value:
+                  grant_type: authorization_code
+                  code: ac_example
+                  redirect_uri: https://desktop.example.com/callback
+                  code_verifier: verifier_example_43_chars_minimum_length_0000000
+                  client_id: elicloud-desktop
+              deviceCode:
+                value:
+                  grant_type: urn:ietf:params:oauth:grant-type:device_code
+                  device_code: dc_example
+                  client_id: elicloud-desktop
+      responses:
+        '200':
+          description: 令牌已签发。
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Pragma:
+              schema:
+                type: string
+                example: no-cache
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                access_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.example.signature
+                token_type: Bearer
+                expires_in: 3600
+                scope: openid profile email mc:whitelist
+                id_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.example.idtoken
+                refresh_token: rt_example_offline_access
+        '400':
+          $ref: '#/components/responses/TokenError'
+        '401':
+          $ref: '#/components/responses/TokenError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /auth/device_authorization:
+    post:
+      operationId: deviceAuthorization
+      tags: [Auth]
+      summary: 设备授权（RFC 8628 第一步）
+      description: |
+        `application/x-www-form-urlencoded`。返回设备码与人读短码；
+        把 `verification_uri_complete` 显示给用户，然后按 `interval` 轮询 `/auth/token`。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeviceAuthorizationRequest'
+            example:
+              client_id: elicloud-cli
+              scope: openid profile email
+      responses:
+        '200':
+          description: 设备码。
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceAuthorizationResponse'
+              example:
+                device_code: dc_example_device_code
+                user_code: WDJB-MJHT
+                verification_uri: https://api.example.com/auth/device
+                verification_uri_complete: https://api.example.com/auth/device?user_code=WDJB-MJHT
+                expires_in: 600
+                interval: 5
+        '400':
+          $ref: '#/components/responses/TokenError'
+        '401':
+          $ref: '#/components/responses/TokenError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /auth/logout:
+    get:
+      operationId: logout
+      tags: [Auth]
+      summary: RP-Initiated Logout（浏览器跳转）
+      description: |
+        **浏览器跳转语义**：清会话 cookie、撤销该会话派生的 refresh 链。
+
+        `post_logout_redirect_uri` 必须在该客户端注册的 `post_logout_redirect_uris` 内，
+        否则服务端**不会跳转**（防开放重定向），而是渲染登出页。
+        `id_token_hint` 只校验签名与 `iss`（允许已过期）。
+      security: []
+      parameters:
+        - name: post_logout_redirect_uri
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+        - name: id_token_hint
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: client_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '302':
+          description: 已登出并回跳。
+          headers:
+            Location:
+              schema:
+                type: string
+                example: https://desktop.example.com/signed-out
+            Set-Cookie:
+              schema:
+                type: string
+                example: elicloud_session=; Max-Age=0; Path=/
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+        '200':
+          description: 已登出，但未提供/未注册回跳地址（渲染登出页）。
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            text/html:
+              schema:
+                type: string
+              example: <!doctype html><title>已退出</title><p>你已退出登录。</p>
+  # ============================================================== UserInfo
+  /userinfo/v1/profile:
+    get:
+      operationId: getMyProfile
+      tags: [UserInfo]
+      summary: 读取自己的资料
+      description: |
+        **没有记录也返回 200**：`nickname` / `bio` / 图片字段为 `null`。
+        客户端在这种情况下用 SSO 用户名兜底展示。
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 资料快照（可能全为 null 字段）。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+              example:
+                user_id: u_example01
+                nickname: 秋风
+                bio: 白天写代码，晚上挖矿。
+                avatar:
+                  content_type: image/png
+                  size_bytes: 20480
+                  sha256: 9f2c1b7d0e4a5c6b8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e
+                  updated_at: '2026-11-01T19:30:00Z'
+                banner: null
+                created_at: '2026-10-30T08:00:00Z'
+                updated_at: '2026-11-01T19:30:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    put:
+      operationId: updateMyProfile
+      tags: [UserInfo]
+      summary: 全量保存昵称与简介
+      description: |
+        全量保存（不是 PATCH）。未知字段会被拒绝（400 `invalid_request`）。
+
+        - 昵称：trim + NFC，1–32 个码点，不能含控制字符与换行。
+        - 简介：≤500 字符，纯文本；空字符串等价于清空（返回 `null`）。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdateRequest'
+            example:
+              nickname: 秋风
+              bio: 白天写代码，晚上挖矿。
+      responses:
+        '200':
+          description: 保存后的资料快照。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+              example:
+                user_id: u_example01
+                nickname: 秋风
+                bio: 白天写代码，晚上挖矿。
+                avatar: null
+                banner: null
+                created_at: '2026-10-30T08:00:00Z'
+                updated_at: '2026-11-01T19:35:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /userinfo/v1/profiles/{sub}:
+    get:
+      operationId: getProfile
+      tags: [UserInfo]
+      summary: 读取其他用户的公开资料
+      description: 只返回已存在的资料记录；没有记录返回 404 `profile_not_found`。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sub
+          in: path
+          required: true
+          description: SSO 的 `sub`。
+          schema:
+            type: string
+            example: u_example02
+      responses:
+        '200':
+          description: 公开资料。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+              example:
+                user_id: u_example02
+                nickname: 北岸
+                bio: null
+                avatar:
+                  content_type: image/jpeg
+                  size_bytes: 51200
+                  sha256: 1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809
+                  updated_at: '2026-10-31T12:00:00Z'
+                banner: null
+                created_at: '2026-10-31T11:00:00Z'
+                updated_at: '2026-10-31T12:00:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /userinfo/v1/profile/{kind}:
+    parameters:
+      - $ref: '#/components/parameters/ProfileKind'
+    get:
+      operationId: getMyProfileImage
+      tags: [UserInfo]
+      summary: 读取自己的头像 / 头图（二进制）
+      description: |
+        返回图片字节与 `ETag`（值为 sha256，带引号）。客户端带 `If-None-Match`
+        且命中时返回 304（无 body）。客户端按 sha256 缓存位图，不落盘图片字节。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: If-None-Match
+          in: header
+          required: false
+          schema:
+            type: string
+            example: '"9f2c1b7d0e4a5c6b8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e"'
+      responses:
+        '200':
+          description: 图片字节。
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Cache-Control:
+              schema:
+                type: string
+                example: private, max-age=60
+            X-Content-Type-Options:
+              schema:
+                type: string
+                example: nosniff
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+              x-example-fixture: fixtures/userinfo/image-avatar.png
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+              x-example-fixture: fixtures/userinfo/image-banner.jpg
+            image/webp:
+              schema:
+                type: string
+                format: binary
+              x-example-fixture: fixtures/userinfo/image-avatar.png
+        '304':
+          description: 命中 `If-None-Match`，body 为空。
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    put:
+      operationId: uploadMyProfileImage
+      tags: [UserInfo]
+      summary: 上传并替换头像 / 头图（multipart）
+      description: |
+        `multipart/form-data`，字段名固定 `file`。
+
+        服务端先按声明的 `Content-Type` 白名单校验，再按文件头嗅探真实类型，
+        两者必须一致（防止改扩展名）。成功后返回完整资料快照。
+
+        客户端在上传前完成裁切与重编码：头像缩到 512px、头图 1600px 内，banner 5:1。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PNG / JPEG / WebP 图片字节。
+            encoding:
+              file:
+                contentType: image/png, image/jpeg, image/webp
+      responses:
+        '200':
+          description: 替换成功后的资料快照。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+              example:
+                user_id: u_example01
+                nickname: 秋风
+                bio: null
+                avatar:
+                  content_type: image/png
+                  size_bytes: 20480
+                  sha256: 9f2c1b7d0e4a5c6b8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e
+                  updated_at: '2026-11-01T19:40:00Z'
+                banner: null
+                created_at: '2026-10-30T08:00:00Z'
+                updated_at: '2026-11-01T19:40:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    delete:
+      operationId: deleteMyProfileImage
+      tags: [UserInfo]
+      summary: 删除头像 / 头图
+      description: '幂等：本来就没有图片时返回 200 且 `changed: false`。'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 删除结果。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteImageResponse'
+              example:
+                deleted: true
+                changed: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /userinfo/v1/profiles/{sub}/{kind}:
+    get:
+      operationId: getProfileImage
+      tags: [UserInfo]
+      summary: 读取其他用户的头像 / 头图（二进制）
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sub
+          in: path
+          required: true
+          schema:
+            type: string
+            example: u_example02
+        - $ref: '#/components/parameters/ProfileKind'
+      responses:
+        '200':
+          description: 图片字节。
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Cache-Control:
+              schema:
+                type: string
+                example: private, max-age=60
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+              x-example-fixture: fixtures/userinfo/image-avatar.png
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+              x-example-fixture: fixtures/userinfo/image-banner.jpg
+            image/webp:
+              schema:
+                type: string
+                format: binary
+              x-example-fixture: fixtures/userinfo/image-avatar.png
+        '304':
+          description: 命中 `If-None-Match`。
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  # ================================================================== MC
+  /mc/healthz:
+    get:
+      operationId: mcHealth
+      tags: [MC]
+      summary: MC 服务健康快照（匿名）
+      description: |
+        RCON 不可达时返回 **503 但仍带完整 body** —— 这不是错误响应，
+        客户端必须照常解析，由 `rcon.reachable` 判断可用性。
+        只有 200/503 之外的状态码才按错误处理。
+
+        `rcon.endpoint` 是运维字段，**不展示给用户**。
+      security: []
+      responses:
+        '200':
+          description: 健康。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McHealthStatus'
+              example:
+                status: ok
+                rcon:
+                  reachable: true
+                  endpoint: mc.example.com:25575
+                  latency_ms: 3
+                whitelist_count: 7
+                sso_issuer: https://api.example.com/auth
+                version: 1.0.0
+        '503':
+          description: 降级（RCON 不可达），body 仍是完整健康快照。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McHealthStatus'
+              example:
+                status: degraded
+                rcon:
+                  reachable: false
+                  endpoint: mc.example.com:25575
+                  error: connection refused
+                whitelist_count: null
+                sso_issuer: https://api.example.com/auth
+                version: 1.0.0
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /mc/v1/names:
+    get:
+      operationId: listMyMcNames
+      tags: [MC]
+      summary: 本账号的 MC 条目与名额
+      description: 默认只返回 `active` 条目；`include_removed=true` 时含历史。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: include_removed
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: true
+      responses:
+        '200':
+          description: 条目列表。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McNameListResponse'
+              example:
+                sub: u_example01
+                quota:
+                  limit: 2
+                  used: 1
+                  remaining: 1
+                names:
+                  - id: mn_0001
+                    name: alice_star
+                    name_display: Alice_Star
+                    note: 主账号
+                    status: active
+                    uuid: null
+                    created_at: '2026-11-01T10:00:00Z'
+                    removed_at: null
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    post:
+      operationId: addMcName
+      tags: [MC]
+      summary: 提交一个 MC 用户名
+      description: |
+        **幂等**：首次创建返回 201；同一个名字（大小写不敏感）重复提交返回 200
+        与已有条目，不会再次执行 RCON 写入。
+
+        `name` 必须匹配 `^[A-Za-z0-9_]{3,16}$`，服务端归一为小写。
+        `note` 必填，1–200 字符，不能含控制字符。
+
+        写入必须被 `whitelist list` 回读确认；未被确认时返回 503 `rcon_unavailable`
+        且**不落库**。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNameRequest'
+            example:
+              name: Alice_Star
+              note: 主账号
+      responses:
+        '201':
+          description: 新建成功。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McNameEntry'
+              example:
+                id: mn_0001
+                name: alice_star
+                name_display: Alice_Star
+                note: 主账号
+                status: active
+                uuid: null
+                created_at: '2026-11-01T10:00:00Z'
+                removed_at: null
+        '200':
+          description: 幂等：该名字已绑定在本账号下，返回已有条目。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McNameEntry'
+              example:
+                id: mn_0001
+                name: alice_star
+                name_display: Alice_Star
+                note: 主账号
+                status: active
+                uuid: null
+                created_at: '2026-11-01T10:00:00Z'
+                removed_at: null
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /mc/v1/names/{id}:
+    delete:
+      operationId: removeMcName
+      tags: [MC]
+      summary: 撤回自己的 MC 条目
+      description: |
+        立刻在 MC 服务端执行 `whitelist remove`。已撤回的条目再删一次是幂等成功。
+
+        别人的条目一律返回 404 `not_found`（不泄露存在性）。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 条目 ID，形如 `mn_0001`。
+          schema:
+            type: string
+            example: mn_0001
+      responses:
+        '200':
+          description: '撤回后的条目（`status: removed`）。'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McNameEntry'
+              example:
+                id: mn_0001
+                name: alice_star
+                name_display: Alice_Star
+                note: 主账号
+                status: removed
+                uuid: null
+                created_at: '2026-11-01T10:00:00Z'
+                removed_at: '2026-11-01T11:00:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /mc/v1/me:
+    get:
+      operationId: mcIdentity
+      tags: [MC]
+      summary: 当前身份自检
+      description: 只回令牌里的 claim，不查 SSO 数据库。
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 身份。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McIdentity'
+              example:
+                sub: u_example01
+                username: alice
+                issuer: https://api.example.com/auth
+                scope: openid profile email mc:whitelist
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  # ================================================================ Core（未来）
+  /core/v1/services:
+    get:
+      operationId: listCoreServices
+      tags: [Core]
+      summary: 平台服务清单
+      description: |
+        **尚未上线**（当前客户端硬编码服务清单）。按平台文档 §5.8 的契约预留：
+        返回 `{services: [...]}`，`id` 是服务名（如 `mc`），`path` 是对外前缀（如 `/mc`）。
+
+        调用方拿不到 200 时应回退到本地清单，不要把服务列表判成「全部不可用」。
+      x-elicloud-status: planned
+      security: []
+      responses:
+        '200':
+          description: 服务清单。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoreServiceListResponse'
+              example:
+                services:
+                  - id: mc
+                    name: MC 白名单
+                    path: /mc
+                    online: true
+                  - id: userinfo
+                    name: 个人资料
+                    path: /userinfo
+                    online: true
+        '404':
+          description: 该服务尚未上线。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EliCloudError'
+              example:
+                error: not_found
+                error_description: 服务不存在
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        SSO 签发的 RS256 access token。**不能**用 `id_token`（其 `aud` 是 client_id，
+        业务服务会按 `aud` 拒绝）。
+  parameters:
+    ProfileKind:
+      name: kind
+      in: path
+      required: true
+      description: 图片种类。
+      schema:
+        type: string
+        enum: [avatar, banner]
+  headers:
+    NoStore:
+      description: 令牌响应一律不得缓存。
+      schema:
+        type: string
+        example: no-store
+    ETag:
+      description: 图片内容的 sha256（带双引号）。
+      schema:
+        type: string
+        example: '"9f2c1b7d0e4a5c6b8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e"'
+    RetryAfter:
+      description: 建议等待时长；秒数或 HTTP-date。
+      schema:
+        type: string
+        examples: ['60', 'Wed, 21 Oct 2026 07:28:00 GMT']
+    WWWAuthenticate:
+      description: 认证挑战（`invalid_token` / `insufficient_scope`）。
+      schema:
+        type: string
+        example: 'Bearer error="insufficient_scope", scope="mc:whitelist"'
+  responses:
+    BadRequest:
+      description: 请求不合法（`invalid_request` 或字段级校验码）。
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EliCloudError'
+          example:
+            error: invalid_request
+            error_description: 请求参数不合法
+    Unauthorized:
+      description: 令牌缺失/过期/签名错/iss 或 aud 不符（`invalid_token`），或凭证错误（`invalid_grant`）。
+      headers:
+        WWW-Authenticate:
+          $ref: '#/components/headers/WWWAuthenticate'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EliCloudError'
+          examples:
+            invalidToken:
+              value:
+                error: invalid_token
+                error_description: 令牌已过期
+            invalidGrant:
+              value:
+                error: invalid_grant
+                error_description: 账号或密码错误
+    TokenError:
+      description: OAuth 令牌端点的 RFC 6749 §5.2 错误（`invalid_request` / `invalid_client` / `invalid_grant` / ...）。
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        WWW-Authenticate:
+          $ref: '#/components/headers/WWWAuthenticate'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EliCloudError'
+          examples:
+            invalidClient:
+              value:
+                error: invalid_client
+                error_description: 客户端认证失败
+            authorizationPending:
+              value:
+                error: authorization_pending
+                error_description: 用户尚未确认
+            slowDown:
+              value:
+                error: slow_down
+                error_description: 轮询过快
+    Forbidden:
+      description: 身份有效但权限不足（`insufficient_scope`），或业务规则拒绝（`email_not_verified` / `registration_disabled`）。
+      headers:
+        WWW-Authenticate:
+          $ref: '#/components/headers/WWWAuthenticate'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EliCloudError'
+          examples:
+            insufficientScope:
+              value:
+                error: insufficient_scope
+                error_description: 这次登录没有拿到文件服务的权限
+            emailNotVerified:
+              value:
+                error: email_not_verified
+                error_description: 邮箱还没有验证，请先完成邮箱验证
+    NotFound:
+      description: 资源不存在，**或存在但不属于当前用户**（服务端刻意不区分）。
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EliCloudError'
+          examples:
+            notFound:
+              value:
+                error: not_found
+                error_description: 条目不存在
+            profileNotFound:
+              value:
+                error: profile_not_found
+                error_description: 还没有这个用户的资料
+            imageNotFound:
+              value:
+                error: image_not_found
+                error_description: 还没有设置这张图片
+    Conflict:
+      description: 状态冲突（`user_exists` / `email_exists` / `registration_pending` / `already_verified` / `name_taken` / `quota_exceeded`）。
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EliCloudError'
+          examples:
+            userExists:
+              value:
+                error: user_exists
+                error_description: 该用户名已被占用
+            nameTaken:
+              value:
+                error: name_taken
+                error_description: 用户名 alice_star 已被其它账号绑定
+            quotaExceeded:
+              value:
+                error: quota_exceeded
+                error_description: 每个账号最多绑定 2 个 MC 用户名，请先撤回一个
+    Gone:
+      description: 资源已过期（`registration_expired`）。
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EliCloudError'
+          example:
+            error: registration_expired
+            error_description: 这次注册已经过期，请重新创建账号
+    PayloadTooLarge:
+      description: 图片超过大小上限（`image_too_large`）。
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EliCloudError'
+          example:
+            error: image_too_large
+            error_description: 图片超过上限 5 MiB
+    TooManyRequests:
+      description: 触发限流（`rate_limited` / `too_many_requests`）。
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EliCloudError'
+          example:
+            error: too_many_requests
+            error_description: 登录尝试过于频繁，请稍后再试
+    BadGateway:
+      description: 依赖服务返回意外结果（`email_delivery_failed` / `file_service_error`）。
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EliCloudError'
+          example:
+            error: email_delivery_failed
+            error_description: 验证邮件发送失败，请稍后重试
+    ServiceUnavailable:
+      description: |
+        依赖不可用（`email_service_unavailable` / `file_service_unavailable` /
+        `database_unavailable` / `rcon_unavailable` / `jwks_unavailable`）。
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EliCloudError'
+          example:
+            error: rcon_unavailable
+            error_description: 白名单写入未被回读确认，本次未记录
+    InternalError:
+      description: 服务端内部错误（`server_error`）。
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EliCloudError'
+          example:
+            error: server_error
+            error_description: 服务内部错误
+  schemas:
+    # ------------------------------------------------------------- 通用
+    EliCloudError:
+      type: object
+      description: 所有服务的统一错误信封。
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: 错误码；调用方必须按它分支，不要按 `error_description` 文案分支。
+          example: invalid_grant
+        error_description:
+          type: [string, 'null']
+          description: 人类可读说明；随时可能改，不可用于逻辑判断。
+          example: 账号或密码错误
+    # --------------------------------------------------------------- 认证
+    RegisterRequest:
+      type: object
+      required: [username, password, email]
+      additionalProperties: true
+      properties:
+        username:
+          type: string
+          description: 只能填用户名（不能含 `@`），3–32 字符，`^[A-Za-z0-9][A-Za-z0-9_.-]*$`。
+          minLength: 3
+          maxLength: 32
+          pattern: '^[A-Za-z0-9][A-Za-z0-9_.-]*$'
+          example: alice
+        password:
+          type: string
+          format: password
+          description: 8–64 字符；UTF-8 不超过 72 字节；必须同时含字母与数字；不得是常见弱口令。
+          minLength: 8
+          maxLength: 64
+        email:
+          type: string
+          format: email
+          description: 注册必须填写邮箱，服务端会向它发送验证邮件。
+          maxLength: 254
+          example: alice@example.com
+    RegistrationRef:
+      type: object
+      required: [registration_id]
+      properties:
+        registration_id:
+          type: string
+          description: |
+            注册 capability（形如 `reg_...`）。用来查询状态/重发/取消，
+            **不要**当作用户 ID 存库。
+          minLength: 1
+          maxLength: 128
+          example: reg_examplepending
+    RegistrationPending:
+      type: object
+      required: [registration_id, status, email_masked, expires_at, resend_after]
+      properties:
+        registration_id:
+          type: string
+          example: reg_examplepending
+        status:
+          $ref: '#/components/schemas/RegistrationStatusValue'
+        email_masked:
+          type: string
+          description: 掩码邮箱，如 `a***@example.com`。
+          example: a***@example.com
+        expires_at:
+          type: string
+          format: date-time
+          description: 验证链接过期时间（ISO8601 UTC）。
+          example: '2026-11-01T20:00:00Z'
+        resend_after:
+          type: integer
+          minimum: 0
+          description: 距离可以重发验证邮件的秒数；0 表示可立即重发。
+          example: 60
+    RegistrationStatus:
+      type: object
+      required: [registration_id, status, email_masked, expires_at, resend_after]
+      properties:
+        registration_id:
+          type: string
+          example: reg_examplepending
+        status:
+          $ref: '#/components/schemas/RegistrationStatusValue'
+        email_masked:
+          type: string
+          example: a***@example.com
+        expires_at:
+          type: string
+          format: date-time
+          example: '2026-11-01T20:00:00Z'
+        resend_after:
+          type: integer
+          minimum: 0
+          example: 42
+        user:
+          description: 仅在 `verified` 时返回。
+          oneOf:
+            - $ref: '#/components/schemas/EliCloudUser'
+            - type: 'null'
+        reason:
+          type: [string, 'null']
+          description: |
+            `expired` / `failed` 时的原因，如 `timeout`、`username_taken`、
+            `email_taken`、`email_delivery_failed`、`email_service_unavailable`。
+          example: timeout
+    RegistrationStatusValue:
+      type: string
+      description: |
+        `pending` 等待确认；`verified` 账号已创建；`expired` 链接过期；
+        `failed` 建号失败。已取消的注册按不存在处理（404），不会出现在这里。
+      enum: [pending, verified, expired, failed]
+    EliCloudUser:
+      type: object
+      required: [id, username]
+      properties:
+        id:
+          type: string
+          description: 用户 ID，即 JWT 的 `sub`；永不变更。
+          example: u_example01
+        username:
+          type: string
+          example: alice
+        email:
+          type: [string, 'null']
+          format: email
+          example: alice@example.com
+        email_verified:
+          type: [boolean, 'null']
+          description: 历史账号/管理员建号可能为 `false`。
+          example: true
+        created_at:
+          type: [string, 'null']
+          format: date-time
+          example: '2026-11-01T19:00:00Z'
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          description: 登录标识：用户名或邮箱都行（字段名沿用 `username`）。
+          example: alice
+        password:
+          type: string
+          format: password
+          example: S3cret!pass
+    LoginResult:
+      type: object
+      required: [access_token, token_type, expires_in, refresh_token, scope]
+      properties:
+        access_token:
+          type: string
+          description: RS256 JWT，`aud` 为业务服务受众。
+        token_type:
+          type: string
+          const: Bearer
+        expires_in:
+          type: integer
+          description: access token 有效期（秒）。
+          example: 3600
+        refresh_token:
+          type: string
+          example: rt_example_refresh_token
+        scope:
+          type: string
+          description: 空格分隔的 scope。
+          example: openid profile email mc:whitelist
+        user:
+          description: 便利字段；身份以 `/auth/userinfo` 为准。
+          oneOf:
+            - $ref: '#/components/schemas/EliCloudUser'
+            - type: 'null'
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+          minLength: 1
+          example: rt_example_refresh_token
+    RefreshResult:
+      type: object
+      required: [access_token, token_type, expires_in, refresh_token]
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          const: Bearer
+        expires_in:
+          type: integer
+          example: 3600
+        refresh_token:
+          type: string
+          description: 轮换后的新令牌；旧令牌立即失效。
+          example: rt_example_rotated_token
+    UserInfoResponse:
+      type: object
+      required: [sub]
+      properties:
+        sub:
+          type: string
+          example: u_example01
+        preferred_username:
+          type: [string, 'null']
+          description: 需要 `profile` scope。平台**不再**返回非标准的 `username`。
+          example: alice
+        email:
+          type: [string, 'null']
+          description: 需要 `email` scope，且账号确实填了邮箱。
+          example: alice@example.com
+        email_verified:
+          type: [boolean, 'null']
+          example: true
+        name:
+          type: [string, 'null']
+          description: 平台当前不返回，保留以兼容未来。
+        scope:
+          type: [string, 'null']
+          description: 本次令牌的 scope（不是用户 claim，保留以便自检）。
+          example: openid profile email
+    OidcDiscoveryDocument:
+      type: object
+      required: [issuer]
+      properties:
+        issuer:
+          type: string
+          description: 必须与运行时实际对外地址逐字一致（JWT 的 `iss` 也是它）。
+          example: https://api.example.com/auth
+        authorization_endpoint:
+          type: string
+          format: uri
+        token_endpoint:
+          type: string
+          format: uri
+        userinfo_endpoint:
+          type: string
+          format: uri
+          description: |
+            ⚠️ 线缆名是一个词 `userinfo_endpoint`；按通用命名策略猜成
+            `user_info_endpoint` 会静默绑定成 null。
+        jwks_uri:
+          type: string
+          format: uri
+        device_authorization_endpoint:
+          type: string
+          format: uri
+        end_session_endpoint:
+          type: string
+          format: uri
+        response_types_supported:
+          type: array
+          items:
+            type: string
+        response_modes_supported:
+          type: array
+          items:
+            type: string
+        grant_types_supported:
+          type: array
+          items:
+            type: string
+        code_challenge_methods_supported:
+          type: array
+          items:
+            type: string
+            enum: [S256]
+        token_endpoint_auth_methods_supported:
+          type: array
+          items:
+            type: string
+        id_token_signing_alg_values_supported:
+          type: array
+          items:
+            type: string
+            enum: [RS256]
+        subject_types_supported:
+          type: array
+          items:
+            type: string
+            enum: [public]
+        scopes_supported:
+          type: array
+          items:
+            type: string
+        claims_supported:
+          type: array
+          items:
+            type: string
+    JwksDocument:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/Jwk'
+    Jwk:
+      type: object
+      required: [kty, kid]
+      properties:
+        kty:
+          type: string
+          example: RSA
+        kid:
+          type: string
+          example: '2026-01'
+        use:
+          type: string
+          example: sig
+        alg:
+          type: string
+          example: RS256
+        n:
+          type: string
+          description: RSA modulus（base64url）。
+        e:
+          type: string
+          description: RSA exponent（base64url）。
+    TokenRequest:
+      type: object
+      required: [grant_type]
+      properties:
+        grant_type:
+          type: string
+          enum:
+            - authorization_code
+            - refresh_token
+            - urn:ietf:params:oauth:grant-type:device_code
+        code:
+          type: string
+          description: '`authorization_code` 时必填。'
+        redirect_uri:
+          type: string
+          format: uri
+          description: '`authorization_code` 时必填，必须与授权请求逐字相同。'
+        code_verifier:
+          type: string
+          description: PKCE verifier（43–128 字符）。
+          minLength: 43
+          maxLength: 128
+        refresh_token:
+          type: string
+          description: '`refresh_token` 时必填。'
+        device_code:
+          type: string
+          description: 设备码轮询时必填。
+        client_id:
+          type: string
+          description: 公开客户端必填；保密客户端可用 Basic 认证代替。
+        client_secret:
+          type: string
+          format: password
+          description: '`client_secret_post` 时使用；不得与 Basic 混用。'
+        scope:
+          type: string
+          description: '`refresh_token` 时可收窄 scope（不能扩大）。'
+    TokenResponse:
+      type: object
+      required: [access_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          const: Bearer
+        expires_in:
+          type: integer
+          example: 3600
+        scope:
+          type: [string, 'null']
+          example: openid profile email mc:whitelist
+        id_token:
+          type: [string, 'null']
+          description: '`aud` 是 client_id，**不可用于访问业务 API**。'
+        refresh_token:
+          type: [string, 'null']
+          description: 只有请求了 `offline_access` 才会出现。
+    DeviceAuthorizationRequest:
+      type: object
+      required: [client_id, scope]
+      properties:
+        client_id:
+          type: string
+          example: elicloud-cli
+        client_secret:
+          type: string
+          format: password
+        scope:
+          type: string
+          example: openid profile email
+    DeviceAuthorizationResponse:
+      type: object
+      required: [device_code, user_code, verification_uri, expires_in, interval]
+      properties:
+        device_code:
+          type: string
+          description: 只给设备，用于轮询令牌端点。
+        user_code:
+          type: string
+          description: 人读短码（去掉易混淆字符），形如 `WDJB-MJHT`。
+          example: WDJB-MJHT
+        verification_uri:
+          type: string
+          format: uri
+        verification_uri_complete:
+          type: [string, 'null']
+          format: uri
+        expires_in:
+          type: integer
+          example: 600
+        interval:
+          type: integer
+          description: 轮询间隔（秒）；`slow_down` 时 +5，上限 60。
+          example: 5
+    # ------------------------------------------------------------- UserInfo
+    ProfileUpdateRequest:
+      type: object
+      required: [nickname]
+      additionalProperties: false
+      properties:
+        nickname:
+          type: string
+          description: trim + NFC 后 1–32 个码点；不能是空串、不能含控制/格式字符、不能换行。
+          minLength: 1
+          maxLength: 32
+          example: 秋风
+        bio:
+          type: [string, 'null']
+          description: 纯文本，≤500 字符；空串等价于清空。
+          maxLength: 500
+          example: 白天写代码，晚上挖矿。
+    ProfileImageInfo:
+      type: object
+      required: [content_type, size_bytes, sha256, updated_at]
+      properties:
+        content_type:
+          type: string
+          enum: [image/png, image/jpeg, image/webp]
+        size_bytes:
+          type: integer
+          minimum: 0
+          example: 20480
+        sha256:
+          type: string
+          description: 图片内容的 sha256（小写 hex），同时用作缓存键与 ETag。
+          pattern: '^[0-9a-f]{64}$'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2026-11-01T19:30:00Z'
+    UserProfile:
+      type: object
+      required: [user_id]
+      properties:
+        user_id:
+          type: string
+          description: SSO 的 `sub`。
+          example: u_example01
+        nickname:
+          type: [string, 'null']
+          example: 秋风
+        bio:
+          type: [string, 'null']
+          example: 白天写代码，晚上挖矿。
+        avatar:
+          description: 头像元数据；没有设置时为 null。
+          oneOf:
+            - $ref: '#/components/schemas/ProfileImageInfo'
+            - type: 'null'
+        banner:
+          description: 头图元数据；没有设置时为 null。
+          oneOf:
+            - $ref: '#/components/schemas/ProfileImageInfo'
+            - type: 'null'
+        created_at:
+          type: [string, 'null']
+          format: date-time
+        updated_at:
+          type: [string, 'null']
+          format: date-time
+    DeleteImageResponse:
+      type: object
+      required: [deleted, changed]
+      properties:
+        deleted:
+          type: boolean
+          const: true
+        changed:
+          type: boolean
+          description: 是否真的删掉了东西；本来就是空的为 `false`。
+    # ------------------------------------------------------------------ MC
+    McHealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        rcon:
+          description: RCON 连通性。
+          oneOf:
+            - $ref: '#/components/schemas/McRconStatus'
+            - type: 'null'
+        whitelist_count:
+          type: [integer, 'null']
+          description: 白名单里的名字数量；RCON 不可达时为 null。
+          example: 7
+        sso_issuer:
+          type: [string, 'null']
+          description: 本服务配置的 SSO issuer，用于核对与平台是否一致。
+          example: https://api.example.com/auth
+        version:
+          type: [string, 'null']
+          example: 1.0.0
+    McRconStatus:
+      type: object
+      required: [reachable]
+      properties:
+        reachable:
+          type: boolean
+        endpoint:
+          type: [string, 'null']
+          description: |
+            `host:port`。**运维字段，不展示给用户** —— 错误文案也不能出现它。
+          example: mc.example.com:25575
+        latency_ms:
+          type: [integer, 'null']
+          description: 一次 `whitelist list` 的往返毫秒数。
+          example: 3
+        error:
+          type: [string, 'null']
+          description: 不可达原因（技术文本，不展示给用户）。
+    McNameQuota:
+      type: object
+      required: [limit, used, remaining]
+      properties:
+        limit:
+          type: integer
+          example: 2
+        used:
+          type: integer
+          example: 1
+        remaining:
+          type: integer
+          example: 1
+    McNameEntry:
+      type: object
+      required: [id, name, name_display, note, status]
+      properties:
+        id:
+          type: string
+          example: mn_0001
+        name:
+          type: string
+          description: 归一后的 MC 用户名（小写），服务内部一律用它做键。
+          example: alice_star
+        name_display:
+          type: string
+          description: 用户提交时的原始写法，仅用于展示。
+          example: Alice_Star
+        note:
+          type: string
+          description: 必填备注，1–200 字符。
+          example: 主账号
+        status:
+          type: string
+          enum: [active, removed]
+        uuid:
+          type: [string, 'null']
+          description: |
+            恒为 null：服务只走 RCON，`whitelist list` 不返回 UUID，
+            平台刻意不自己构造。**不要**把它当判定依据。
+        created_at:
+          type: [string, 'null']
+          format: date-time
+        removed_at:
+          type: [string, 'null']
+          format: date-time
+    McNameListResponse:
+      type: object
+      required: [sub, names]
+      properties:
+        sub:
+          type: string
+          example: u_example01
+        quota:
+          oneOf:
+            - $ref: '#/components/schemas/McNameQuota'
+            - type: 'null'
+        names:
+          type: array
+          items:
+            $ref: '#/components/schemas/McNameEntry'
+    CreateNameRequest:
+      type: object
+      required: [name, note]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          pattern: '^[A-Za-z0-9_]{3,16}$'
+          description: MC 用户名；服务端归一为小写。
+          example: Alice_Star
+        note:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: 必填备注，1–200 字符，不能含控制字符。
+          example: 主账号
+    McIdentity:
+      type: object
+      required: [sub]
+      properties:
+        sub:
+          type: string
+          example: u_example01
+        username:
+          type: [string, 'null']
+          description: 来自令牌 claim，不查 SSO 数据库。
+        issuer:
+          type: [string, 'null']
+        scope:
+          type: [string, 'null']
+    # ---------------------------------------------------------------- Core
+    CoreServiceListResponse:
+      type: object
+      required: [services]
+      properties:
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreServiceInfo'
+    CoreServiceInfo:
+      type: object
+      required: [id, name, path, online]
+      properties:
+        id:
+          type: string
+          description: 服务名（容器名），如 `mc`。
+          example: mc
+        name:
+          type: string
+          example: MC 白名单
+        path:
+          type: string
+          description: 对外路径前缀，如 `/mc`。**不是**服务名。
+          example: /mc
+        online:
+          type: boolean
+          example: true

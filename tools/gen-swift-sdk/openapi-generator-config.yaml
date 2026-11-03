@@ -1,0 +1,13 @@
+# swift-openapi-generator 的输入配置（tools/gen-swift-sdk/gen_swift_sdk.py 传给 --config）。
+#
+# 只生成 **客户端** 需要的两样东西：
+#   types  → contracts/openapi.yaml 里所有 schemas 的 Swift 类型（Sendable + CodingKeys）
+#   client → 每个 operationId 一个 async/await 方法（Operations.<id>.Input/Output）
+#
+# 不生成 server（本仓库不做 Swift 服务端）；行为层（会话、超时、错误映射、图片管线）
+# 手写在 sdks/swift/Sources/EliCloudSDK/ 下，不放在 Generated/。
+generate:
+  - types
+  - client
+accessModifier: public
+namingStrategy: idiomatic
