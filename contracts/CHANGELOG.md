@@ -3,6 +3,15 @@
 版本号在 `contracts/VERSION`（语义化版本）。任何端点/字段/错误码/文案 key 的变化都必须先改这里，
 再改 `openapi.yaml` / `errors.json` / `copy/zh-CN.json` / `fixtures/`，最后同步四端。
 
+## 未发布 — 上传 part 的 encoding 改为单一 `image/png`
+
+- `PUT /userinfo/v1/profile/{kind}` 的 `encoding.file.contentType`：
+  `image/png, image/jpeg, image/webp` → `image/png`。
+- 理由：Encoding Object 的 `contentType` 是单个媒体类型；逗号分隔的多值不是合法写法，
+  生成器会把 part 的 `Content-Type` 退化成 `text/plain`，客户端上传会被服务端的类型白名单拒绝。
+  Stage 4 §4.6 要求客户端上传前统一重编码 PNG，所以声明 `image/png` 就是客户端真实行为；
+  服务端仍接受 JPEG/WebP（历史图片），已在 description 里说明。
+
 ## 1.0.0 — 2026-11-01
 
 首个版本。基线来自现有实现，不是设计草案：
