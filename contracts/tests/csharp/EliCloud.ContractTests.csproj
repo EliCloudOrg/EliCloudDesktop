@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>EliCloud.ContractTests</RootNamespace>
+    <AssemblyName>EliCloud.ContractTests</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);CA1305;CA1307;CA2007</NoWarn>
+  </PropertyGroup>
+
+  <!-- 并列存在 EliCloud.Sdk 仓库时走 ProjectReference（与桌面端同样的策略）。 -->
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\EliCloud.Sdk\src\EliCloud.Sdk\EliCloud.Sdk.csproj')">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\..\..\EliCloud.Sdk\src\EliCloud.Sdk\EliCloud.Sdk.csproj" />
+  </ItemGroup>
+
+  <!-- 没有并列 SDK 仓库时走 NuGet 包（需要网络；CI 里应优先 checkout SDK）。 -->
+  <ItemGroup Condition="!Exists('$(MSBuildThisFileDirectory)..\..\..\..\EliCloud.Sdk\src\EliCloud.Sdk\EliCloud.Sdk.csproj')">
+    <PackageReference Include="EliCloud.Sdk" Version="1.0.0-alpha.3" />
+  </ItemGroup>
+
+</Project>

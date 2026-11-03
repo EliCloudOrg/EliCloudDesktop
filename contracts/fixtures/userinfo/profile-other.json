@@ -1,0 +1,32 @@
+{
+  "name": "userinfo/profile-other.json",
+  "operationId": "getProfile",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/userinfo/v1/profiles/u_example02",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "user_id": "u_example02",
+      "nickname": "北岸",
+      "bio": null,
+      "avatar": {
+        "content_type": "image/jpeg",
+        "size_bytes": 51200,
+        "sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809",
+        "updated_at": "2026-10-31T12:00:00Z"
+      },
+      "banner": null,
+      "created_at": "2026-10-31T11:00:00Z",
+      "updated_at": "2026-10-31T12:00:00Z"
+    }
+  }
+}

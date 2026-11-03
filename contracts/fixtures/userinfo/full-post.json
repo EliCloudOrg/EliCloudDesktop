@@ -1,0 +1,25 @@
+{
+  "name": "userinfo/full-post.json",
+  "operationId": "postUserInfo",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/userinfo",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "sub": "u_example01",
+      "preferred_username": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "scope": "openid profile email"
+    }
+  }
+}

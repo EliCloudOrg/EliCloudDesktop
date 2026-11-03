@@ -1,0 +1,67 @@
+{
+  "name": "auth/discovery.json",
+  "operationId": "getOidcDiscovery",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/auth/.well-known/openid-configuration"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=300"
+    },
+    "json": {
+      "issuer": "https://api.example.com/auth",
+      "authorization_endpoint": "https://api.example.com/auth/authorize",
+      "token_endpoint": "https://api.example.com/auth/token",
+      "userinfo_endpoint": "https://api.example.com/auth/userinfo",
+      "jwks_uri": "https://api.example.com/auth/.well-known/jwks.json",
+      "device_authorization_endpoint": "https://api.example.com/auth/device_authorization",
+      "end_session_endpoint": "https://api.example.com/auth/logout",
+      "response_types_supported": [
+        "code"
+      ],
+      "response_modes_supported": [
+        "query"
+      ],
+      "grant_types_supported": [
+        "authorization_code",
+        "refresh_token",
+        "urn:ietf:params:oauth:grant-type:device_code"
+      ],
+      "code_challenge_methods_supported": [
+        "S256"
+      ],
+      "token_endpoint_auth_methods_supported": [
+        "none",
+        "client_secret_basic",
+        "client_secret_post"
+      ],
+      "id_token_signing_alg_values_supported": [
+        "RS256"
+      ],
+      "subject_types_supported": [
+        "public"
+      ],
+      "scopes_supported": [
+        "openid",
+        "profile",
+        "email",
+        "offline_access",
+        "mc:whitelist",
+        "files:read",
+        "files:write",
+        "userinfo:read",
+        "userinfo:write"
+      ],
+      "claims_supported": [
+        "sub",
+        "preferred_username",
+        "email",
+        "email_verified"
+      ]
+    }
+  }
+}

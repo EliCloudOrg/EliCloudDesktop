@@ -1,0 +1,30 @@
+{
+  "name": "auth/login-email-not-verified.json",
+  "operationId": "login",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/login",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "username": "pending_user",
+      "password": "S3cret!pass"
+    }
+  },
+  "response": {
+    "status": 403,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "error": "email_not_verified",
+      "error_description": "邮箱还没有验证，请先完成邮箱验证"
+    }
+  },
+  "expected": {
+    "errorCode": "email_not_verified",
+    "copyKey": "error.auth.email_not_verified"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "auth/token-pending.json",
+  "operationId": "token",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/token",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "form": {
+      "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+      "device_code": "dc_example_device_code",
+      "client_id": "elicloud-cli"
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "error": "authorization_pending",
+      "error_description": "用户尚未确认"
+    }
+  },
+  "expected": {
+    "errorCode": "authorization_pending",
+    "copyKey": "error.auth.authorization_pending"
+  }
+}

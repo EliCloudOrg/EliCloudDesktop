@@ -1,0 +1,35 @@
+{
+  "name": "auth/token-success.json",
+  "operationId": "token",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/token",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "form": {
+      "grant_type": "authorization_code",
+      "code": "ac_example",
+      "redirect_uri": "https://desktop.example.com/callback",
+      "code_verifier": "verifier_example_43_chars_minimum_length_0000000",
+      "client_id": "elicloud-desktop"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "Pragma": "no-cache"
+    },
+    "json": {
+      "access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.example.signature",
+      "token_type": "Bearer",
+      "expires_in": 3600,
+      "scope": "openid profile email mc:whitelist",
+      "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.example.idtoken",
+      "refresh_token": "rt_example_offline_access"
+    }
+  }
+}

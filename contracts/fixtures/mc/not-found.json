@@ -1,0 +1,26 @@
+{
+  "name": "mc/not-found.json",
+  "operationId": "removeMcName",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "DELETE",
+    "path": "/mc/v1/names/mn_9999",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture"
+    }
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "error": "not_found",
+      "error_description": "条目不存在"
+    }
+  },
+  "expected": {
+    "errorCode": "not_found",
+    "copyKey": "error.transport.not_found"
+  }
+}

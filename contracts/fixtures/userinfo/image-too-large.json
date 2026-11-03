@@ -1,0 +1,34 @@
+{
+  "name": "userinfo/image-too-large.json",
+  "operationId": "uploadMyProfileImage",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "PUT",
+    "path": "/userinfo/v1/profile/avatar",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture",
+      "Content-Type": "multipart/form-data; boundary=----EliCloudFixture"
+    },
+    "multipart": {
+      "file": {
+        "fixture": "image-avatar.png",
+        "contentType": "image/png",
+        "declaredSizeBytes": 6291456
+      }
+    }
+  },
+  "response": {
+    "status": 413,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "error": "image_too_large",
+      "error_description": "图片超过上限 5 MiB"
+    }
+  },
+  "expected": {
+    "errorCode": "image_too_large",
+    "copyKey": "error.profile.image_too_large"
+  }
+}

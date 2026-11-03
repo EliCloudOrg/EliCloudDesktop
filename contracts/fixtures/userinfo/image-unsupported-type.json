@@ -1,0 +1,33 @@
+{
+  "name": "userinfo/image-unsupported-type.json",
+  "operationId": "uploadMyProfileImage",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "PUT",
+    "path": "/userinfo/v1/profile/avatar",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture",
+      "Content-Type": "multipart/form-data; boundary=----EliCloudFixture"
+    },
+    "multipart": {
+      "file": {
+        "fixture": "image-banner.jpg",
+        "contentType": "image/gif"
+      }
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "error": "unsupported_image_type",
+      "error_description": "只支持 PNG / JPEG / WebP 图片"
+    }
+  },
+  "expected": {
+    "errorCode": "unsupported_image_type",
+    "copyKey": "error.profile.unsupported_image_type"
+  }
+}

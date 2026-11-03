@@ -1,0 +1,32 @@
+{
+  "name": "errors/retry-after.json",
+  "operationId": "login",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/login",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "username": "alice",
+      "password": "wrong-password"
+    }
+  },
+  "response": {
+    "status": 429,
+    "headers": {
+      "Content-Type": "application/json",
+      "Retry-After": "120"
+    },
+    "json": {
+      "error": "too_many_requests",
+      "error_description": "登录尝试过于频繁，请稍后再试"
+    }
+  },
+  "expected": {
+    "errorCode": "too_many_requests",
+    "copyKey": "error.transport.too_many_requests",
+    "retryAfterSeconds": 120
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "register/status-verified.json",
+  "operationId": "getRegistrationStatus",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/register/status",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "registration_id": "reg_examplepending"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "registration_id": "reg_examplepending",
+      "status": "verified",
+      "email_masked": "a***@example.com",
+      "expires_at": "2026-11-01T20:00:00Z",
+      "resend_after": 0,
+      "user": {
+        "id": "u_example01",
+        "username": "alice",
+        "email": "alice@example.com",
+        "email_verified": true,
+        "created_at": "2026-11-01T19:00:00Z"
+      },
+      "reason": null
+    }
+  }
+}

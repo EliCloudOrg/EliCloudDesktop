@@ -1,0 +1,31 @@
+{
+  "name": "userinfo/profile-invalid-nickname.json",
+  "operationId": "updateMyProfile",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "PUT",
+    "path": "/userinfo/v1/profile",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture",
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "nickname": "   ",
+      "bio": null
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "error": "invalid_nickname",
+      "error_description": "昵称不能为空"
+    }
+  },
+  "expected": {
+    "errorCode": "invalid_nickname",
+    "copyKey": "error.profile.invalid_nickname"
+  }
+}

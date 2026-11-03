@@ -1,0 +1,28 @@
+{
+  "name": "auth/jwks.json",
+  "operationId": "getJwks",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/auth/.well-known/jwks.json"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=300"
+    },
+    "json": {
+      "keys": [
+        {
+          "kty": "RSA",
+          "kid": "2026-01",
+          "use": "sig",
+          "alg": "RS256",
+          "n": "sXchDAexampleexampleexampleexampleexampleexampleexampleexample",
+          "e": "AQAB"
+        }
+      ]
+    }
+  }
+}

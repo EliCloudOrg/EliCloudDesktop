@@ -1,0 +1,41 @@
+{
+  "name": "auth/login-success.json",
+  "operationId": "login",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/login",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "username": "alice",
+      "password": "S3cret!pass"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store"
+    },
+    "json": {
+      "access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.example.signature",
+      "token_type": "Bearer",
+      "expires_in": 3600,
+      "refresh_token": "rt_example_refresh_token",
+      "scope": "openid profile email mc:whitelist userinfo:read userinfo:write",
+      "user": {
+        "id": "u_example01",
+        "username": "alice",
+        "email": "alice@example.com",
+        "email_verified": true,
+        "created_at": "2026-11-01T19:00:00Z"
+      }
+    }
+  },
+  "expected": {
+    "errorCode": null,
+    "copyKey": null
+  }
+}

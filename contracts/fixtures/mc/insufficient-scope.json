@@ -1,0 +1,27 @@
+{
+  "name": "mc/insufficient-scope.json",
+  "operationId": "listMyMcNames",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/mc/v1/names",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiJ9.no-scope"
+    }
+  },
+  "response": {
+    "status": 403,
+    "headers": {
+      "Content-Type": "application/json",
+      "WWW-Authenticate": "Bearer error=\"insufficient_scope\", scope=\"mc:whitelist\""
+    },
+    "json": {
+      "error": "insufficient_scope",
+      "error_description": "令牌缺少 mc:whitelist 权限"
+    }
+  },
+  "expected": {
+    "errorCode": "insufficient_scope",
+    "copyKey": "error.transport.insufficient_scope"
+  }
+}

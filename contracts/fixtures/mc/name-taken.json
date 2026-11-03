@@ -1,0 +1,31 @@
+{
+  "name": "mc/name-taken.json",
+  "operationId": "addMcName",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/mc/v1/names",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture",
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "name": "bob_star",
+      "note": "小号"
+    }
+  },
+  "response": {
+    "status": 409,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "error": "name_taken",
+      "error_description": "用户名 bob_star 已被其它账号绑定"
+    }
+  },
+  "expected": {
+    "errorCode": "name_taken",
+    "copyKey": "error.mc.name_taken"
+  }
+}

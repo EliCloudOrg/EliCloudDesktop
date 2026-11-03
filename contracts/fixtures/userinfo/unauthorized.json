@@ -1,0 +1,27 @@
+{
+  "name": "userinfo/unauthorized.json",
+  "operationId": "getUserInfo",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/auth/userinfo",
+    "headers": {
+      "Authorization": "Bearer not-a-valid-token"
+    }
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "Content-Type": "application/json",
+      "WWW-Authenticate": "Bearer"
+    },
+    "json": {
+      "error": "invalid_token",
+      "error_description": "令牌已过期"
+    }
+  },
+  "expected": {
+    "errorCode": "invalid_token",
+    "copyKey": "error.transport.invalid_token"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "userinfo/upload-avatar.json",
+  "operationId": "uploadMyProfileImage",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "PUT",
+    "path": "/userinfo/v1/profile/avatar",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture",
+      "Content-Type": "multipart/form-data; boundary=----EliCloudFixture"
+    },
+    "multipart": {
+      "file": {
+        "fixture": "image-avatar.png",
+        "contentType": "image/png"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "user_id": "u_example01",
+      "nickname": "秋风",
+      "bio": "白天写代码，晚上挖矿。",
+      "avatar": {
+        "content_type": "image/png",
+        "size_bytes": 20480,
+        "sha256": "9f2c1b7d0e4a5c6b8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e",
+        "updated_at": "2026-11-01T19:30:00Z"
+      },
+      "banner": null,
+      "created_at": "2026-10-30T08:00:00Z",
+      "updated_at": "2026-11-01T19:30:00Z"
+    }
+  }
+}

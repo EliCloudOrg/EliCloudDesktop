@@ -1,0 +1,33 @@
+{
+  "name": "mc/add-name-idempotent.json",
+  "operationId": "addMcName",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/mc/v1/names",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture",
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "name": "alice_star",
+      "note": "主账号"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "id": "mn_0001",
+      "name": "alice_star",
+      "name_display": "Alice_Star",
+      "note": "主账号",
+      "status": "active",
+      "uuid": null,
+      "created_at": "2026-11-01T10:00:00Z",
+      "removed_at": null
+    }
+  }
+}

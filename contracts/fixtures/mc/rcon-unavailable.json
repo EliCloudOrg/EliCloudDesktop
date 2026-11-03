@@ -1,0 +1,31 @@
+{
+  "name": "mc/rcon-unavailable.json",
+  "operationId": "addMcName",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/mc/v1/names",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture",
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "name": "alice_third",
+      "note": "第三个"
+    }
+  },
+  "response": {
+    "status": 503,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "error": "rcon_unavailable",
+      "error_description": "白名单写入未被回读确认，本次未记录"
+    }
+  },
+  "expected": {
+    "errorCode": "rcon_unavailable",
+    "copyKey": "error.mc.rcon_unavailable"
+  }
+}

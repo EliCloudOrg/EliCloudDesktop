@@ -1,0 +1,31 @@
+{
+  "name": "errors/unicode.json",
+  "operationId": "updateMyProfile",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "PUT",
+    "path": "/userinfo/v1/profile",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture",
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "nickname": "秋风🎐",
+      "bio": "拆字：é vs é"
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8"
+    },
+    "json": {
+      "error": "invalid_bio",
+      "error_description": "简介不能包含控制字符（收到 U+0007）"
+    }
+  },
+  "expected": {
+    "errorCode": "invalid_bio",
+    "copyKey": "error.profile.invalid_bio"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "mc/health-ok.json",
+  "operationId": "mcHealth",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/mc/healthz"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "status": "ok",
+      "rcon": {
+        "reachable": true,
+        "endpoint": "mc.example.com:25575",
+        "latency_ms": 3
+      },
+      "whitelist_count": 7,
+      "sso_issuer": "https://api.example.com/auth",
+      "version": "1.0.0"
+    }
+  }
+}

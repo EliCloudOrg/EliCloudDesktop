@@ -1,0 +1,30 @@
+{
+  "name": "register/status-failed.json",
+  "operationId": "getRegistrationStatus",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/register/status",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "registration_id": "reg_examplefailed"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "registration_id": "reg_examplefailed",
+      "status": "failed",
+      "email_masked": "a***@example.com",
+      "expires_at": "2026-11-01T20:00:00Z",
+      "resend_after": 0,
+      "user": null,
+      "reason": "username_taken"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "register/resend.json",
+  "operationId": "resendRegistrationEmail",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/register/resend",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "registration_id": "reg_examplepending"
+    }
+  },
+  "response": {
+    "status": 202,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "registration_id": "reg_examplepending",
+      "status": "pending",
+      "email_masked": "a***@example.com",
+      "expires_at": "2026-11-01T20:10:00Z",
+      "resend_after": 61
+    }
+  }
+}

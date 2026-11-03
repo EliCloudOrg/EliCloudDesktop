@@ -1,0 +1,22 @@
+{
+  "name": "auth/logout-redirect.json",
+  "operationId": "logout",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/auth/logout",
+    "query": {
+      "post_logout_redirect_uri": "https://desktop.example.com/signed-out",
+      "id_token_hint": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.example.idtoken",
+      "state": "st_example"
+    }
+  },
+  "response": {
+    "status": 302,
+    "headers": {
+      "Location": "https://desktop.example.com/signed-out?state=st_example",
+      "Set-Cookie": "elicloud_session=; Max-Age=0; Path=/",
+      "Cache-Control": "no-store"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "userinfo/get-avatar.json",
+  "operationId": "getMyProfileImage",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/userinfo/v1/profile/avatar",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "image/png",
+      "ETag": "\"9f2c1b7d0e4a5c6b8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e\"",
+      "Cache-Control": "private, max-age=60",
+      "X-Content-Type-Options": "nosniff"
+    },
+    "file": "image-avatar.png"
+  },
+  "expected": {
+    "binary": "image-avatar.png"
+  }
+}

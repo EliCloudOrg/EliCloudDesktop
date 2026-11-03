@@ -1,0 +1,27 @@
+{
+  "name": "userinfo/profile-empty.json",
+  "operationId": "getMyProfile",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/userinfo/v1/profile",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "user_id": "u_example01",
+      "nickname": null,
+      "bio": null,
+      "avatar": null,
+      "banner": null,
+      "created_at": null,
+      "updated_at": null
+    }
+  }
+}

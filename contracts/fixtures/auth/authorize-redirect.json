@@ -1,0 +1,26 @@
+{
+  "name": "auth/authorize-redirect.json",
+  "operationId": "authorize",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/auth/authorize",
+    "query": {
+      "response_type": "code",
+      "client_id": "elicloud-desktop",
+      "redirect_uri": "https://desktop.example.com/callback",
+      "scope": "openid profile email",
+      "state": "st_example",
+      "nonce": "no_example",
+      "code_challenge": "challenge_example_43_chars_minimum_length_000000",
+      "code_challenge_method": "S256"
+    }
+  },
+  "response": {
+    "status": 302,
+    "headers": {
+      "Location": "https://desktop.example.com/callback?code=ac_example&state=st_example",
+      "Cache-Control": "no-store"
+    }
+  }
+}

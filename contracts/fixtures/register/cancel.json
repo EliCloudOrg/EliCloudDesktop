@@ -1,0 +1,18 @@
+{
+  "name": "register/cancel.json",
+  "operationId": "cancelRegistration",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/register/cancel",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "registration_id": "reg_examplepending"
+    }
+  },
+  "response": {
+    "status": 204
+  }
+}

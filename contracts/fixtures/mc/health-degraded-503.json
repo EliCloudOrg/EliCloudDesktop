@@ -1,0 +1,26 @@
+{
+  "name": "mc/health-degraded-503.json",
+  "operationId": "mcHealth",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/mc/healthz"
+  },
+  "response": {
+    "status": 503,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "status": "degraded",
+      "rcon": {
+        "reachable": false,
+        "endpoint": "mc.example.com:25575",
+        "error": "connection refused"
+      },
+      "whitelist_count": null,
+      "sso_issuer": "https://api.example.com/auth",
+      "version": "1.0.0"
+    }
+  }
+}

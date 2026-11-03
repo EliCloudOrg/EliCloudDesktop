@@ -1,0 +1,25 @@
+{
+  "name": "userinfo/no-email.json",
+  "operationId": "getUserInfo",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/auth/userinfo",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "sub": "u_example01",
+      "preferred_username": "alice",
+      "email": null,
+      "email_verified": false,
+      "scope": "openid profile"
+    }
+  }
+}

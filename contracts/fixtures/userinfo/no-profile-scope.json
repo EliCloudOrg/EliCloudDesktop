@@ -1,0 +1,22 @@
+{
+  "name": "userinfo/no-profile-scope.json",
+  "operationId": "getUserInfo",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/auth/userinfo",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "sub": "u_example01",
+      "scope": "openid email"
+    }
+  }
+}

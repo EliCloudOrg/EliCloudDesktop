@@ -1,0 +1,336 @@
+{
+  "version": 1,
+  "contractVersion": "1.0.0",
+  "description": "客户端可见错误码的唯一真源。各端只能依赖这里的 code → category/copyKey/retryable 映射，不得自建第二份文案。",
+  "envelope": {
+    "contentType": "application/json",
+    "fields": ["error", "error_description"],
+    "nonJsonFallback": "响应体不是 JSON 时只保留 HTTP 状态码，error 视为 null"
+  },
+  "retryAfter": {
+    "statuses": [429, 503],
+    "header": "Retry-After",
+    "formats": ["seconds", "http-date"],
+    "notes": "缺失时退化为 copy 里写的默认等待时长；不出现无限重试。"
+  },
+  "categories": {
+    "transport": "传输/通用协议层；任何服务都可能返回。",
+    "auth": "认证与令牌（OAuth/OIDC）。",
+    "registration": "注册与邮箱验证。",
+    "profile": "个人资料、图片。",
+    "mc": "MC 白名单服务。",
+    "client": "客户端本地合成的错误（没有对应 HTTP 响应）。"
+  },
+  "codes": {
+    "invalid_request": {
+      "http": [400],
+      "category": "transport",
+      "copyKey": "error.transport.invalid_request",
+      "retryable": false
+    },
+    "invalid_token": {
+      "http": [401],
+      "category": "transport",
+      "copyKey": "error.transport.invalid_token",
+      "retryable": false,
+      "userAction": "relogin"
+    },
+    "insufficient_scope": {
+      "http": [403],
+      "category": "transport",
+      "copyKey": "error.transport.insufficient_scope",
+      "retryable": false,
+      "userAction": "relogin"
+    },
+    "forbidden": {
+      "http": [403],
+      "category": "transport",
+      "copyKey": "error.transport.forbidden",
+      "retryable": false,
+      "notes": "只在管理端点出现（未配置 ADMIN_TOKEN 或令牌错误）。客户端契约不含管理端点，正常收不到；保留它是为了让这张表覆盖 SDK 的全部错误码。"
+    },
+    "not_found": {
+      "http": [404],
+      "category": "transport",
+      "copyKey": "error.transport.not_found",
+      "retryable": false
+    },
+    "rate_limited": {
+      "http": [429],
+      "category": "transport",
+      "copyKey": "error.transport.rate_limited",
+      "retryable": true,
+      "placeholders": ["retryAfterSeconds"]
+    },
+    "too_many_requests": {
+      "http": [429],
+      "category": "transport",
+      "copyKey": "error.transport.too_many_requests",
+      "retryable": true,
+      "placeholders": ["retryAfterSeconds"]
+    },
+    "server_error": {
+      "http": [500],
+      "category": "transport",
+      "copyKey": "error.transport.server_error",
+      "retryable": true
+    },
+    "jwks_unavailable": {
+      "http": [503],
+      "category": "transport",
+      "copyKey": "error.transport.jwks_unavailable",
+      "retryable": true
+    },
+    "http_error": {
+      "http": [],
+      "wildcardStatus": true,
+      "category": "transport",
+      "copyKey": "error.transport.http_error",
+      "retryable": false,
+      "notes": "服务端把非结构化 detail 包成 {error: http_error} 的兜底形态；状态码以响应为准。"
+    },
+    "invalid_client": {
+      "http": [401],
+      "category": "auth",
+      "copyKey": "error.auth.invalid_client",
+      "retryable": false
+    },
+    "invalid_grant": {
+      "http": [400, 401],
+      "category": "auth",
+      "copyKey": "error.auth.invalid_grant",
+      "retryable": false,
+      "notes": "/auth/login 与 /auth/refresh 用 401；/auth/token 用 400。"
+    },
+    "unauthorized_client": {
+      "http": [400],
+      "category": "auth",
+      "copyKey": "error.auth.unauthorized_client",
+      "retryable": false
+    },
+    "unsupported_grant_type": {
+      "http": [400],
+      "category": "auth",
+      "copyKey": "error.auth.unsupported_grant_type",
+      "retryable": false
+    },
+    "invalid_scope": {
+      "http": [400],
+      "category": "auth",
+      "copyKey": "error.auth.invalid_scope",
+      "retryable": false
+    },
+    "authorization_pending": {
+      "http": [400],
+      "category": "auth",
+      "copyKey": "error.auth.authorization_pending",
+      "retryable": true,
+      "notes": "设备码流程的正常轮询状态：继续按 interval 轮询，不要当错误弹窗。"
+    },
+    "slow_down": {
+      "http": [400],
+      "category": "auth",
+      "copyKey": "error.auth.slow_down",
+      "retryable": true,
+      "notes": "把轮询间隔 +5 秒（上限 60）后重试。"
+    },
+    "access_denied": {
+      "http": [400],
+      "category": "auth",
+      "copyKey": "error.auth.access_denied",
+      "retryable": false
+    },
+    "expired_token": {
+      "http": [400],
+      "category": "auth",
+      "copyKey": "error.auth.expired_token",
+      "retryable": false
+    },
+    "login_required": {
+      "http": [400, 302],
+      "category": "auth",
+      "copyKey": "error.auth.login_required",
+      "retryable": false,
+      "notes": "prompt=none 时没有会话：改走交互式登录。授权端点以 302 回跳 error=login_required。"
+    },
+    "unsupported_response_type": {
+      "http": [400],
+      "category": "auth",
+      "copyKey": "error.auth.unsupported_response_type",
+      "retryable": false
+    },
+    "email_not_verified": {
+      "http": [403],
+      "category": "auth",
+      "copyKey": "error.auth.email_not_verified",
+      "retryable": false
+    },
+    "user_exists": {
+      "http": [409],
+      "category": "registration",
+      "copyKey": "error.registration.user_exists",
+      "retryable": false
+    },
+    "email_exists": {
+      "http": [409],
+      "category": "registration",
+      "copyKey": "error.registration.email_exists",
+      "retryable": false
+    },
+    "registration_disabled": {
+      "http": [403],
+      "category": "registration",
+      "copyKey": "error.registration.registration_disabled",
+      "retryable": false
+    },
+    "registration_pending": {
+      "http": [409],
+      "category": "registration",
+      "copyKey": "error.registration.registration_pending",
+      "retryable": false
+    },
+    "registration_not_found": {
+      "http": [404],
+      "category": "registration",
+      "copyKey": "error.registration.registration_not_found",
+      "retryable": false
+    },
+    "registration_expired": {
+      "http": [410],
+      "category": "registration",
+      "copyKey": "error.registration.registration_expired",
+      "retryable": false
+    },
+    "already_verified": {
+      "http": [409],
+      "category": "registration",
+      "copyKey": "error.registration.already_verified",
+      "retryable": false
+    },
+    "email_delivery_failed": {
+      "http": [502],
+      "category": "registration",
+      "copyKey": "error.registration.email_delivery_failed",
+      "retryable": true
+    },
+    "email_service_unavailable": {
+      "http": [503],
+      "category": "registration",
+      "copyKey": "error.registration.email_service_unavailable",
+      "retryable": true
+    },
+    "invalid_nickname": {
+      "http": [400],
+      "category": "profile",
+      "copyKey": "error.profile.invalid_nickname",
+      "retryable": false
+    },
+    "invalid_bio": {
+      "http": [400],
+      "category": "profile",
+      "copyKey": "error.profile.invalid_bio",
+      "retryable": false
+    },
+    "invalid_image": {
+      "http": [400],
+      "category": "profile",
+      "copyKey": "error.profile.invalid_image",
+      "retryable": false
+    },
+    "unsupported_image_type": {
+      "http": [400],
+      "category": "profile",
+      "copyKey": "error.profile.unsupported_image_type",
+      "retryable": false
+    },
+    "image_too_large": {
+      "http": [413],
+      "category": "profile",
+      "copyKey": "error.profile.image_too_large",
+      "retryable": false
+    },
+    "image_quota_exceeded": {
+      "http": [409],
+      "category": "profile",
+      "copyKey": "error.profile.image_quota_exceeded",
+      "retryable": false
+    },
+    "image_not_found": {
+      "http": [404],
+      "category": "profile",
+      "copyKey": "error.profile.image_not_found",
+      "retryable": false
+    },
+    "profile_not_found": {
+      "http": [404],
+      "category": "profile",
+      "copyKey": "error.profile.profile_not_found",
+      "retryable": false
+    },
+    "file_service_unavailable": {
+      "http": [503],
+      "category": "profile",
+      "copyKey": "error.profile.file_service_unavailable",
+      "retryable": true
+    },
+    "file_service_error": {
+      "http": [502],
+      "category": "profile",
+      "copyKey": "error.profile.file_service_error",
+      "retryable": true
+    },
+    "database_unavailable": {
+      "http": [503],
+      "category": "profile",
+      "copyKey": "error.profile.database_unavailable",
+      "retryable": true
+    },
+    "name_taken": {
+      "http": [409],
+      "category": "mc",
+      "copyKey": "error.mc.name_taken",
+      "retryable": false
+    },
+    "quota_exceeded": {
+      "http": [409],
+      "category": "mc",
+      "copyKey": "error.mc.quota_exceeded",
+      "retryable": false
+    },
+    "rcon_unavailable": {
+      "http": [503],
+      "category": "mc",
+      "copyKey": "error.mc.rcon_unavailable",
+      "retryable": true
+    },
+    "network_error": {
+      "http": [],
+      "category": "client",
+      "copyKey": "error.client.network_error",
+      "retryable": true,
+      "clientSynthesized": true
+    },
+    "timeout": {
+      "http": [],
+      "category": "client",
+      "copyKey": "error.client.timeout",
+      "retryable": true,
+      "clientSynthesized": true
+    },
+    "invalid_response": {
+      "http": [502],
+      "category": "client",
+      "copyKey": "error.client.invalid_response",
+      "retryable": true,
+      "clientSynthesized": true,
+      "notes": "客户端把无法解析的成功响应也归到这里（UserInfoApi 当前即如此）。"
+    },
+    "unknown": {
+      "http": [],
+      "category": "client",
+      "copyKey": "error.client.unknown",
+      "retryable": false,
+      "clientSynthesized": true
+    }
+  }
+}

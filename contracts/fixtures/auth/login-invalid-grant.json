@@ -1,0 +1,30 @@
+{
+  "name": "auth/login-invalid-grant.json",
+  "operationId": "login",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/login",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "username": "alice",
+      "password": "wrong-password"
+    }
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "error": "invalid_grant",
+      "error_description": "账号或密码错误"
+    }
+  },
+  "expected": {
+    "errorCode": "invalid_grant",
+    "copyKey": "error.auth.invalid_grant"
+  }
+}

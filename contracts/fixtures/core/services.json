@@ -1,0 +1,31 @@
+{
+  "name": "core/services.json",
+  "operationId": "listCoreServices",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/core/v1/services"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "services": [
+        {
+          "id": "mc",
+          "name": "MC 白名单",
+          "path": "/mc",
+          "online": true
+        },
+        {
+          "id": "userinfo",
+          "name": "个人资料",
+          "path": "/userinfo",
+          "online": true
+        }
+      ]
+    }
+  }
+}

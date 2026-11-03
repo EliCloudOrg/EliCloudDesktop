@@ -1,0 +1,41 @@
+{
+  "name": "mc/names.json",
+  "operationId": "listMyMcNames",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/mc/v1/names",
+    "query": {
+      "include_removed": "true"
+    },
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "sub": "u_example01",
+      "quota": {
+        "limit": 2,
+        "used": 1,
+        "remaining": 1
+      },
+      "names": [
+        {
+          "id": "mn_0001",
+          "name": "alice_star",
+          "name_display": "Alice_Star",
+          "note": "主账号",
+          "status": "active",
+          "uuid": null,
+          "created_at": "2026-11-01T10:00:00Z",
+          "removed_at": null
+        }
+      ]
+    }
+  }
+}

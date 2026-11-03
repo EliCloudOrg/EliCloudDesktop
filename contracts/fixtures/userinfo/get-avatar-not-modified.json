@@ -1,0 +1,19 @@
+{
+  "name": "userinfo/get-avatar-not-modified.json",
+  "operationId": "getMyProfileImage",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "GET",
+    "path": "/userinfo/v1/profile/avatar",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjYtMDEifQ.contract.fixture",
+      "If-None-Match": "\"9f2c1b7d0e4a5c6b8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e\""
+    }
+  },
+  "response": {
+    "status": 304,
+    "headers": {
+      "ETag": "\"9f2c1b7d0e4a5c6b8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e\""
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "auth/device-authorization.json",
+  "operationId": "deviceAuthorization",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/device_authorization",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "form": {
+      "client_id": "elicloud-cli",
+      "scope": "openid profile email"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store"
+    },
+    "json": {
+      "device_code": "dc_example_device_code",
+      "user_code": "WDJB-MJHT",
+      "verification_uri": "https://api.example.com/auth/device",
+      "verification_uri_complete": "https://api.example.com/auth/device?user_code=WDJB-MJHT",
+      "expires_in": 600,
+      "interval": 5
+    }
+  }
+}

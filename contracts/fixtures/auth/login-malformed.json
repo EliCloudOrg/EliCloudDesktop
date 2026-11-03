@@ -1,0 +1,26 @@
+{
+  "name": "auth/login-malformed.json",
+  "operationId": "login",
+  "contractVersion": "1.0.0",
+  "request": {
+    "method": "POST",
+    "path": "/auth/login",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "json": {
+      "username": "alice",
+      "password": "S3cret!pass"
+    }
+  },
+  "response": {
+    "status": 200,
+    "raw": "{\"access_token\": \"eyJhbGciOiJSUzI1NiJ9",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  },
+  "expected": {
+    "malformed": true
+  }
+}
