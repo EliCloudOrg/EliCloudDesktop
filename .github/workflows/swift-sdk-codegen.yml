@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "contracts/openapi.yaml"
+      - "contracts/**"
       - "tools/gen-swift-sdk/**"
       - "sdks/swift/**"
       - ".github/workflows/swift-sdk-codegen.yml"
