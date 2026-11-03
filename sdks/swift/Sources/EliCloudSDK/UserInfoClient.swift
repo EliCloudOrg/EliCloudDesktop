@@ -123,9 +123,11 @@ public struct UserInfoClient: Sendable {
 
     /// 删除头像 / 头图（幂等：本来就没有时 `changed == false`）。
     public func deleteImage(kind: ProfileImageKind) async throws -> Components.Schemas.DeleteImageResponse {
-        let output = try await mapErrors { try await client.deleteMyProfileImage( }
-            .init(path: .init(kind: Components.Parameters.ProfileKind(kind)))
-        )
+        let output = try await mapErrors {
+            try await client.deleteMyProfileImage(
+                .init(path: .init(kind: Components.Parameters.ProfileKind(kind)))
+            )
+        }
         guard case .ok(let ok) = output else {
             throw EliCloudEndpoint.unexpected("deleteMyProfileImage")
         }
@@ -134,9 +136,11 @@ public struct UserInfoClient: Sendable {
 
     /// 读取其他用户的头像 / 头图；304 返回 nil。
     public func image(sub: String, kind: ProfileImageKind) async throws -> ProfileImage? {
-        let output = try await mapErrors { try await client.getProfileImage( }
-            .init(path: .init(sub: sub, kind: Components.Parameters.ProfileKind(kind)))
-        )
+        let output = try await mapErrors {
+            try await client.getProfileImage(
+                .init(path: .init(sub: sub, kind: Components.Parameters.ProfileKind(kind)))
+            )
+        }
         switch output {
         case .ok(let ok):
             return try await Self.profileImage(from: ok.body, etag: ok.headers.eTag)
