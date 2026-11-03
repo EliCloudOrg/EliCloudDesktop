@@ -49,6 +49,10 @@ jobs:
       - name: Verify generated output is deterministic
         run: python tools/gen-swift-sdk/gen_swift_sdk.py --check --runner native
 
+      - name: Swift SDK unit + contract tests
+        working-directory: sdks/swift
+        run: swift test
+
       - name: Upload generated sources
         uses: actions/upload-artifact@v4
         with:

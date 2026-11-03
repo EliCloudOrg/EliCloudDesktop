@@ -13,6 +13,10 @@
 
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// SDK 抛出的唯一错误类型。
 public struct EliCloudError: Error, Sendable, Equatable {
 

@@ -16,6 +16,8 @@ public enum EliCloudValidationError: Error, Sendable, Equatable {
     case nicknameInvalid
     /// 简介：≤500 字符（纯文本，控制字符拒绝）。
     case bioTooLong
+    /// 简介含控制字符/换行。
+    case bioInvalid
     /// MC 用户名：`^[A-Za-z0-9_]{3,16}$`。
     case mcNameInvalid
     /// 备注：1–200 字符，不能为空、不能含控制字符。
@@ -60,7 +62,7 @@ public enum EliCloudValidation {
             throw EliCloudValidationError.bioTooLong
         }
         guard trimmed.unicodeScalars.allSatisfy({ !$0.isControlCharacter }) else {
-            throw EliCloudValidationError.nicknameInvalid
+            throw EliCloudValidationError.bioInvalid
         }
         return trimmed
     }

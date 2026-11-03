@@ -879,10 +879,13 @@ paths:
       description: |
         `multipart/form-data`，字段名固定 `file`。
 
-        服务端先按声明的 `Content-Type` 白名单校验，再按文件头嗅探真实类型，
-        两者必须一致（防止改扩展名）。成功后返回完整资料快照。
+        服务端先按声明的 `Content-Type` 白名单校验（`image/png` / `image/jpeg` /
+        `image/webp`），再按文件头嗅探真实类型，两者必须一致（防止改扩展名）。
+        成功后返回完整资料快照。
 
-        客户端在上传前完成裁切与重编码：头像缩到 512px、头图 1600px 内，banner 5:1。
+        客户端在上传前完成裁切与重编码，**一律以 PNG 上传**：头像缩到 512px、
+        头图 1600px 内，banner 5:1。因此这里声明的 part 类型是单一 `image/png`
+        （多值 `contentType` 不是合法的 Encoding Object 写法，生成器会退化成 `text/plain`）。
       security:
         - bearerAuth: []
       requestBody:
@@ -896,10 +899,10 @@ paths:
                 file:
                   type: string
                   format: binary
-                  description: PNG / JPEG / WebP 图片字节。
+                  description: PNG 图片字节（客户端重编码后的结果）。
             encoding:
               file:
-                contentType: image/png, image/jpeg, image/webp
+                contentType: image/png
       responses:
         '200':
           description: 替换成功后的资料快照。
