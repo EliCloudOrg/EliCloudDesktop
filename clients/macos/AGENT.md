@@ -50,3 +50,8 @@ cd sdks/swift && swift test                            # 单测 + contracts/fixt
 - Stage 2 只有 hello-world；业务页面、DMG 公证在 Stage 4；
 - Swift SDK 已完成（生成物 + 传输/会话/错误/校验 + 契约测试，CI 绿）；
 - 截图/无障碍脚本见 `tools/screenshots/`（XCUITest 骨架在 Stage 4 补）。
+
+## CI
+- push 到任意分支会跑 `.github/workflows/macos.yml`（sdk 作业 + app 作业）；
+  app 作业需要 `design/`、`tools/`、`contracts/`、`clients/` 的生成物都已入库；
+  契约或生成器改动后先让 `swift-sdk-codegen` 刷新 Generated 再提交。
