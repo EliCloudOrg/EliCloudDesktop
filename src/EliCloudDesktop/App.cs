@@ -2,6 +2,7 @@ using Microsoft.UI.Reactor.Layout;
 using Microsoft.UI.Reactor.Navigation;
 
 using EliCloudDesktop.Core;
+using EliCloudDesktop.Generated;
 using EliCloudDesktop.Pages;
 using EliCloudDesktop.Services;
 using EliCloudDesktop.Shell;
@@ -13,6 +14,10 @@ using static Microsoft.UI.Reactor.Factories;
 
 // EliCloud 桌面客户端入口。
 // 尺寸取设计稿画布（1252×800），窗口可自由缩放，布局全部按 flex 自适应。
+//
+// 文案资源读取器在进入 UI 之前注入一次：Core/Copy.cs 只认一个委托，不直接依赖 MRT，
+// 这样 Contract/错误映射/校验等纯逻辑可以在没有 package identity 的单测进程里跑。
+Copy.Resolver = static key => MrtCopyResolver.Resolve(key);
 ReactorApp.Run<App>("EliCloud Desktop", DesignTokens.WindowWidth, DesignTokens.WindowHeight);
 
 /// <summary>
@@ -55,6 +60,21 @@ internal sealed class App : Component
         var gateway = UseMemo(
             () => new EliCloudGateway(PlatformConfig.BaseAddress),
             Array.Empty<object>());
+
+        // 窗口规格：初始尺寸由 ReactorApp.Run 给（1252×800），最小尺寸与标题在这里补齐。
+        // 标题/副标题都来自 contracts/copy —— 窗口 chrome 不写第二份文案。
+        var window = UseWindow();
+        UseEffect(() =>
+        {
+            if (window is null) return;
+
+            window.Update(window.Spec with
+            {
+                Title = Copy.Get(CopyKeys.AppTitle),
+                MinWidth = DesignTokens.WindowMinWidth,
+                MinHeight = DesignTokens.WindowMinHeight,
+            });
+        });
 
         var isAuthenticated = state.Session.IsAuthenticated;
 
@@ -145,16 +165,13 @@ internal sealed class App : Component
         // 标题栏是**窗口级**的外壳，不归某一页：登录页、注册/验证页、登录后的主框架共用同一条。
         // 用官方 TitleBar（Tall 就是稿子的 48px），窗口据此推断 ExtendsContentIntoTitleBar，
         // 未登录时也就不会再退回系统自带的那条标题栏。
-        // 副标题只随登录态变化（稿子：Internal 仅登录后出现）。
-        var titleBar = TitleBar("EliCloud Desktop")
+        // 副标题始终显式赋值：Reactor 对「上一帧有、这一帧不设置」的属性不会主动清空，
+        // 退出登录后 Internal 会留在原生 TitleBar 上；给空串才会真的清掉。
+        var titleBar = TitleBar(Copy.Get(CopyKeys.AppTitle))
             .Tall()
             .Icon(AppIconPath)
+            .Subtitle(isAuthenticated ? Copy.Get(CopyKeys.AppSubtitle) : string.Empty)
             .Flex(shrink: 0);
-
-        if (isAuthenticated)
-        {
-            titleBar = titleBar.Subtitle("Internal");
-        }
 
         return FlexColumn(
                 titleBar,

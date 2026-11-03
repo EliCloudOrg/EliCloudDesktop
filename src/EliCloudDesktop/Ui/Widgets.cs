@@ -1,4 +1,5 @@
 using EliCloudDesktop.Core;
+using EliCloudDesktop.Generated;
 using Microsoft.UI.Reactor;
 using Microsoft.UI.Reactor.Layout;
 using Microsoft.UI.Xaml;
@@ -169,15 +170,15 @@ internal static class Widgets
 
         return Border(
             Border(Empty())
-                .Width(8)
-                .Height(8)
-                .CornerRadius(4)
+                .Width(BadgeDotSize)
+                .Height(BadgeDotSize)
+                .CornerRadius(BadgeDotSize / 2)
                 .Background(color))
             .Width(DesignTokens.BadgeSize)
             .Height(DesignTokens.BadgeSize)
             .VerticalAlignment(VerticalAlignment.Center)
             .ToolTip(label)
-            .AutomationName($"服务状态：{label}");
+            .AutomationName(Copy.Format(CopyKeys.StatusServiceStatus, ("status", label)));
     }
 
     /// <summary>圆角头像（稿：64×64，圆角 999 ≈ 圆形）。</summary>
@@ -251,6 +252,9 @@ internal static class Widgets
 
     /// <summary>头像与文字块的间距（4px 网格上的 16；原先的 10 让两者贴在一起）。</summary>
     private const double HeaderAvatarGap = 16;
+
+    /// <summary>状态徽标里那个圆点的直径（稿：8）；外框是 <see cref="DesignTokens.BadgeSize"/> 16。</summary>
+    private const double BadgeDotSize = 8;
 
     /// <summary>标题与右侧操作按钮的间距。</summary>
     private const double HeaderActionGap = 48;
@@ -438,7 +442,8 @@ internal static class Widgets
             .VAlign(VerticalAlignment.Top)
             .Background(Theme.Ref("AcrylicBackgroundFillColorDefaultBrush"))
             .WithBorder(Theme.Ref("SurfaceStrokeColorDefaultBrush"), 1)
-            .CornerRadius(8)
+            // 官方 OverlayCornerRadius（浮层/承托面圆角），不写死 8。
+            .CornerRadius(ThemeResource.CornerRadius("OverlayCornerRadius"))
             .Set(border => border.BackgroundSizing = BackgroundSizing.InnerBorderEdge);
 
     /// <summary>把一张 ms-appx 图片铺成页头底图（UniformToFill 裁切）。</summary>

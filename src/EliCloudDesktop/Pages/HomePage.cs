@@ -1,4 +1,5 @@
 using EliCloudDesktop.Core;
+using EliCloudDesktop.Generated;
 using EliCloudDesktop.Ui;
 using Microsoft.UI.Reactor;
 using Microsoft.UI.Reactor.Core;
@@ -14,31 +15,28 @@ namespace EliCloudDesktop.Pages;
 /// 主页 —— 对应设计稿第二个 App window。
 /// </summary>
 /// <remarks>
-/// <b>内容是硬编码的</b>：Hero 文案、三组表头的标题与说明、每张服务卡片的标题/副标题/图标，
-/// 全部来自设计稿（见 docs/design-spec.md），不依赖任何接口。
+/// <b>内容来自设计稿</b>：Hero 文案、三组表头的标题与说明、每张服务卡片的标题/副标题/图标，
+/// 全部来自设计稿（见 docs/design-spec.md），不依赖任何接口；文案 key 来自
+/// <c>contracts/copy/zh-CN.json</c>。
 /// 唯一「活」的东西是<b>卡片上的状态徽标</b>，以及由此决定的分组归属 ——
 /// 某个状态当下一个服务都没有时，整组表头连同卡片一起不渲染。
 /// </remarks>
 internal sealed class HomePage : Component
 {
-    private const string HeroTitle = "EliCloud";
-
-    private const string HeroDescription = "欢迎来到EliCloud！ 您可以在此访问我们的各项服务，Feel free to use";
-
     private const string HeroBannerUri = "ms-appx:///Assets/Images/home-hero-banner-christmas-pink.jpg";
 
-    /// <summary>一组表头：标题/说明来自设计稿，<see cref="States"/> 决定哪些服务落进这一组。</summary>
-    private sealed record SectionSpec(string Title, string Description, ServiceAvailability[] States);
+    /// <summary>一组表头：标题/说明的 copy key，<see cref="States"/> 决定哪些服务落进这一组。</summary>
+    private sealed record SectionSpec(string TitleKey, string DescriptionKey, ServiceAvailability[] States);
 
     private static readonly SectionSpec[] Sections =
     [
-        new("新服务", "期待最新的服务！",
+        new(CopyKeys.HomeSectionNewTitle, CopyKeys.HomeSectionNewDescription,
             [ServiceAvailability.ComingSoon]),
 
-        new("正在工作", "一览当前可用服务，点击即用",
+        new(CopyKeys.HomeSectionWorkingTitle, CopyKeys.HomeSectionWorkingDescription,
             [ServiceAvailability.Available]),
 
-        new("停止服务", "一刻也没有为这些停止工作的服务而哀悼，接下来赶到的是——用户的审视！",
+        new(CopyKeys.HomeSectionStoppedTitle, CopyKeys.HomeSectionStoppedDescription,
             [ServiceAvailability.Maintenance, ServiceAvailability.Unavailable]),
     ];
 
@@ -65,7 +63,7 @@ internal sealed class HomePage : Component
         {
             body.Add(FlexRow(
                 ProgressRing().Width(20).Height(20),
-                DesignTokens.Body("正在查看服务状态…").Foreground(Theme.SecondaryText)) with
+                DesignTokens.Body(Copy.Get(CopyKeys.HomeLoading)).Foreground(Theme.SecondaryText)) with
             {
                 ColumnGap = 12,
                 AlignItems = FlexAlign.Center,
@@ -82,7 +80,9 @@ internal sealed class HomePage : Component
                 // 这一组现在一个服务都没有 —— 连表头也不加。
                 if (services.Count == 0) continue;
 
-                body.Add(Widgets.SectionHeader(section.Title, section.Description));
+                body.Add(Widgets.SectionHeader(
+                    Copy.Get(section.TitleKey),
+                    Copy.Get(section.DescriptionKey)));
 
                 foreach (var descriptor in services)
                 {
@@ -92,12 +92,16 @@ internal sealed class HomePage : Component
 
             if (body.Count == 0)
             {
-                body.Add(DesignTokens.Body("这里暂时没有服务。").Foreground(Theme.SecondaryText));
+                body.Add(DesignTokens.Body(Copy.Get(CopyKeys.HomeEmpty)).Foreground(Theme.SecondaryText));
             }
         }
 
         return FlexColumn(
-            Widgets.HeroBanner(HeroTitle, HeroDescription, HeroBannerUri, isDarkTheme),
+            Widgets.HeroBanner(
+                Copy.Get(CopyKeys.HomeHeroTitle),
+                Copy.Get(CopyKeys.HomeHeroDescription),
+                HeroBannerUri,
+                isDarkTheme),
 
             ScrollView(
                 VStack(16, [.. body])
@@ -145,6 +149,6 @@ internal sealed class HomePage : Component
                 AlignItems = FlexAlign.Center,
             },
             onClick: open,
-            actionToolTip: "打开");
+            actionToolTip: Copy.Get(CopyKeys.ServiceCardOpen));
     }
 }

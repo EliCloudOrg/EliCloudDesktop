@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using CommunityToolkit.WinUI.Controls;
 using EliCloud.Sdk;
+using EliCloudDesktop.Generated;
 using EliCloudDesktop.Core;
 using EliCloudDesktop.Services;
 using EliCloudDesktop.Ui;
@@ -42,20 +43,15 @@ namespace EliCloudDesktop.Pages;
 internal sealed class ProfilePage : Component
 {
     private const string DefaultAvatarUri = "ms-appx:///Assets/Images/user-avatar-default.png";
-    private const long AvatarMaxBytes = 5 * 1024 * 1024;
-    private const long BannerMaxBytes = 10 * 1024 * 1024;
 
     private const string AvatarKind = "avatar";
     private const string BannerKind = "banner";
-
-    /// <summary>昵称长度上限，与 userinfo 的 <c>max_nickname_chars</c> 一致。</summary>
-    private const int NicknameMaxChars = 32;
 
     /// <summary>
     /// 头图裁切比例（宽:高）。页头横幅按 <see cref="DesignTokens.BannerAspectRatio"/> 等比缩放，
     /// 按同一个比例裁，用户在这里看到的取景就是页头上的取景，不会被 UniformToFill 再切一刀。
     /// </summary>
-    private const double BannerCropAspectRatio = DesignTokens.BannerAspectRatio;
+    private const double BannerCropAspectRatio = Contract.BannerAspectRatio;
 
     /// <summary>弹窗内容宽度。ContentDialog 的内容区约 498，超过它右侧会被裁掉一条。</summary>
     private const double DialogContentWidth = 480;
@@ -127,6 +123,13 @@ internal sealed class ProfilePage : Component
                     return () => { };
                 }
 
+                // 页面每次挂载都会重跑 effect；已解码的图直接复用，别再走一趟 userinfo。
+                if (ProfileImageCache.TryGet(avatarSha, out var cachedAvatar))
+                {
+                    setAvatarSource(cachedAvatar);
+                    return () => { };
+                }
+
                 var cts = new CancellationTokenSource();
                 _ = LoadAsync("avatar", avatarSha, cts.Token);
                 return () =>
@@ -160,6 +163,12 @@ internal sealed class ProfilePage : Component
                 if (bannerSha is not { Length: > 0 })
                 {
                     setBannerSource(null);
+                    return () => { };
+                }
+
+                if (ProfileImageCache.TryGet(bannerSha, out var cachedBanner))
+                {
+                    setBannerSource(cachedBanner);
                     return () => { };
                 }
 
@@ -203,7 +212,7 @@ internal sealed class ProfilePage : Component
 
         var displayName = profile?.DisplayName(session.DisplayName) ?? session.DisplayName;
         var description = string.IsNullOrWhiteSpace(profile?.Bio)
-            ? "还没有填写简介。点「编辑个人信息」写一句吧。"
+            ? Copy.Get(CopyKeys.ProfileEmptyBio)
             : profile!.Bio!;
 
         var shownAvatar = avatarPreview ?? avatarSource;
@@ -214,32 +223,41 @@ internal sealed class ProfilePage : Component
         var defaultNickname = string.IsNullOrWhiteSpace(profile?.Nickname)
             ? session.Username ?? string.Empty
             : profile!.Nickname!;
-        var nicknameIsValid = IsValidNickname(nickname);
+        var nicknameIsValid = Validation.IsValidNickname(nickname);
 
         var cards = new List<Element>
         {
-            Widgets.SettingCard(Widgets.GlyphIcon("\uE77B"), "用户名", session.DisplayName),
-            Widgets.SettingCard(Widgets.GlyphIcon("\uE715"), "邮箱", session.DisplayEmail),
+            Widgets.SettingCard(Widgets.GlyphIcon("\uE77B"), Copy.Get(CopyKeys.ProfileUsername), session.DisplayName),
+            Widgets.SettingCard(Widgets.GlyphIcon("\uE715"), Copy.Get(CopyKeys.ProfileEmail), session.DisplayEmail),
             Widgets.SettingCard(
                 Widgets.GlyphIcon("\uE8FB"),
-                "邮箱状态",
+                Copy.Get(CopyKeys.ProfileEmailStatus),
                 session.EmailVerified switch
                 {
-                    true => "已验证",
-                    false => "未验证",
-                    null => session.Email is null ? "未绑定" : "尚未确认",
+                    true => Copy.Get(CopyKeys.StatusEmailVerified),
+                    false => Copy.Get(CopyKeys.StatusEmailUnverified),
+                    null => session.Email is null
+                        ? Copy.Get(CopyKeys.ProfileEmailUnbound)
+                        : Copy.Get(CopyKeys.StatusEmailPending),
                 }),
-            Widgets.SettingCard(Widgets.GlyphIcon("\uE823"), "登录状态", DescribeSignIn(session)),
+            Widgets.SettingCard(
+                Widgets.GlyphIcon("\uE823"),
+                Copy.Get(CopyKeys.ProfileLoginStatus),
+                DescribeSignIn(session)),
         };
 
         Element editor = (ContentDialog(
-            cropOpen ? (cropKind == BannerKind ? "裁切头图" : "裁切头像") : "编辑个人信息",
+            cropOpen
+                ? (cropKind == BannerKind ? Copy.Get(CopyKeys.ProfileEditCropBanner) : Copy.Get(CopyKeys.ProfileEditCropAvatar))
+                : Copy.Get(CopyKeys.ProfileEditTitle),
             cropOpen ? BuildCropStep() : BuildEditor())
         with
         {
             IsOpen = detailsOpen,
-            PrimaryButtonText = cropOpen ? "应用裁切" : busy ? "保存中…" : "保存",
-            SecondaryButtonText = "取消",
+            PrimaryButtonText = cropOpen
+                ? Copy.Get(CopyKeys.ProfileEditApplyCrop)
+                : busy ? Copy.Get(CopyKeys.CommonSaving) : Copy.Get(CopyKeys.CommonSave),
+            SecondaryButtonText = Copy.Get(CopyKeys.CommonCancel),
             DefaultButton = ContentDialogButton.Primary,
             IsPrimaryButtonEnabled = cropOpen ? cropReady && !cropping : !busy && nicknameIsValid,
             OnOpened = ApplyDialogTheme,
@@ -280,7 +298,8 @@ internal sealed class ProfilePage : Component
         .Set(dialog => editorDialog.Current = dialog);
 
         // 标题的可收缩宽度要给动作按钮让位，按钮宽度只能从原生控件量（字号缩放会改它）。
-        var editAction = Button("编辑个人信息", OpenEditor)
+        var editAction = Button(Copy.Get(CopyKeys.ProfileEditOpen), OpenEditor)
+            .AutomationName(Copy.Get(CopyKeys.ProfileEditOpen))
             .OnSizeChanged((_, args) =>
             {
                 var width = Math.Round(args.NewSize.Width);
@@ -314,12 +333,13 @@ internal sealed class ProfilePage : Component
 
         Element BuildEditor() => VStack(
             12,
-            TextBlock("头像").SemiBold(),
+            TextBlock(Copy.Get(CopyKeys.ProfileEditAvatar)).SemiBold(),
             HStack(
                 12,
                 Widgets.Avatar(shownAvatar, DefaultAvatarUri, DesignTokens.AvatarSize),
-                Button("更换", () => _ = PickImageSafelyAsync(AvatarKind))),
-            TextBlock("头图").SemiBold(),
+                Button(Copy.Get(CopyKeys.ProfileEditChange), () => _ = PickImageSafelyAsync(AvatarKind))
+                    .AutomationName(Copy.Get(CopyKeys.ProfileEditChange))),
+            TextBlock(Copy.Get(CopyKeys.ProfileEditBanner)).SemiBold(),
             Border(
                 shownBanner is null
                     ? Border(Empty()).Height(96).Background(Theme.SubtleFill)
@@ -331,29 +351,31 @@ internal sealed class ProfilePage : Component
                             image.Stretch = Stretch.UniformToFill;
                         })
                         .AccessibilityHidden())
-                .CornerRadius(4),
+                .CornerRadius(ThemeResource.CornerRadius("ControlCornerRadius")),
             HStack(
                 12,
-                Button("更换头图", () => _ = PickImageSafelyAsync(BannerKind)),
-                Button("移除头图", () =>
+                Button(Copy.Get(CopyKeys.ProfileEditChangeBanner), () => _ = PickImageSafelyAsync(BannerKind))
+                    .AutomationName(Copy.Get(CopyKeys.ProfileEditChangeBanner)),
+                Button(Copy.Get(CopyKeys.ProfileEditRemoveBanner), () =>
                 {
                     setPendingBanner(null);
                     setBannerPreview(null);
                     setRemoveBanner(true);
-                })),
+                }).AutomationName(Copy.Get(CopyKeys.ProfileEditRemoveBanner))),
             DesignTokens.Field(
-                TextBox(nickname, setNickname, placeholderText: "例如：秋风").Header("昵称"),
-                "默认使用用户名；1–32 个字符，不能换行"),
+                TextBox(nickname, setNickname, placeholderText: Copy.Get(CopyKeys.ProfileEditNicknamePlaceholder))
+                    .Header(Copy.Get(CopyKeys.ProfileEditNickname)),
+                Copy.Get(CopyKeys.ProfileEditNicknameHint)),
             DesignTokens.Field(
-                TextBox(bio, setBio, placeholderText: "介绍一下自己")
-                    .Header("简介")
+                TextBox(bio, setBio, placeholderText: Copy.Get(CopyKeys.ProfileEditBioPlaceholder))
+                    .Header(Copy.Get(CopyKeys.ProfileEditBio))
                     .Height(120)
                     .Set(box =>
                     {
                         box.AcceptsReturn = true;
                         box.TextWrapping = TextWrapping.Wrap;
                     }),
-                "最多 500 个字符，纯文本"),
+                Copy.Get(CopyKeys.ProfileEditBioHint)),
             error is null
                 ? null
                 : TextBlock(error)
@@ -376,8 +398,8 @@ internal sealed class ProfilePage : Component
                 12,
                 DesignTokens.Body(
                         isBanner
-                            ? "拖动选区，或用四角手柄调整大小；头图按页头横幅的比例（5:1）裁切。"
-                            : "拖动选区，或用四角手柄调整大小；头像会按正方形裁切。")
+                            ? Copy.Get(CopyKeys.ProfileEditCropBannerHint)
+                            : Copy.Get(CopyKeys.ProfileEditCropAvatarHint))
                     .Foreground(Theme.SecondaryText)
                     .TextWrapping(),
                 cropper
@@ -393,12 +415,12 @@ internal sealed class ProfilePage : Component
                         // 模板默认 Padding=80，会把内部画布挤到控件的一半大，图也跟着缩。
                         // 16 刚好够 24px 的手柄露在选区外。
                         native.Padding = new Thickness(16);
-                        native.CornerRadius = new CornerRadius(8);
+                        native.CornerRadius = ThemeResource.CornerRadius("OverlayCornerRadius");
                     }),
                 cropError is null
                     ? cropReady
                         ? null
-                        : DesignTokens.Hint("正在读取图片…")
+                        : DesignTokens.Hint(Copy.Get(CopyKeys.ProfileEditReadingImage))
                     : TextBlock(cropError).Foreground(Theme.SystemCritical).TextWrapping())
             .Width(DialogContentWidth);
         }
@@ -476,7 +498,7 @@ internal sealed class ProfilePage : Component
             }
             catch (Exception)
             {
-                setError("没能打开文件选择器，稍后再试。");
+                setError(Copy.Get(CopyKeys.ProfileEditPickerFailed));
             }
         }
 
@@ -502,18 +524,18 @@ internal sealed class ProfilePage : Component
             try
             {
                 var isAvatar = kind == AvatarKind;
-                var limit = isAvatar ? AvatarMaxBytes : BannerMaxBytes;
+                var limit = isAvatar ? Contract.AvatarMaxBytes : Contract.BannerMaxBytes;
                 var properties = await file.GetBasicPropertiesAsync();
                 if (properties.Size > (ulong)limit)
                 {
-                    setError(isAvatar ? "头像不能超过 5 MB。" : "头图不能超过 10 MB。");
+                    setError(Copy.Get(isAvatar ? CopyKeys.ProfileEditAvatarTooLarge : CopyKeys.ProfileEditBannerTooLarge));
                     return;
                 }
 
                 var raw = await File.ReadAllBytesAsync(file.Path);
                 if (raw.LongLength > limit)
                 {
-                    setError(isAvatar ? "头像不能超过 5 MB。" : "头图不能超过 10 MB。");
+                    setError(Copy.Get(isAvatar ? CopyKeys.ProfileEditAvatarTooLarge : CopyKeys.ProfileEditBannerTooLarge));
                     return;
                 }
 
@@ -528,7 +550,7 @@ internal sealed class ProfilePage : Component
             }
             catch (Exception)
             {
-                setError("没能读取这张图片，换一张试试。");
+                setError(Copy.Get(CopyKeys.ProfileEditImageReadFailed));
             }
         }
 
@@ -543,7 +565,7 @@ internal sealed class ProfilePage : Component
                 var cropper = cropNative.Current;
                 if (cropper?.Source is null)
                 {
-                    throw new InvalidOperationException("图片还没加载完。");
+                    throw new InvalidOperationException(Copy.Get(CopyKeys.ProfileEditImageNotLoaded));
                 }
 
                 using var stream = new InMemoryRandomAccessStream();
@@ -553,7 +575,7 @@ internal sealed class ProfilePage : Component
                 if (cropKind == BannerKind)
                 {
                     var banner = await ProfileImageProcessing.FitAsync(
-                        cropped, ProfileImageProcessing.BannerMaxEdge);
+                        cropped, Contract.BannerMaxEdge);
                     var preview = await ProfileImageCache.LoadAsync(
                         banner,
                         $"pending-banner-{Guid.NewGuid():N}",
@@ -567,7 +589,7 @@ internal sealed class ProfilePage : Component
                 else
                 {
                     var avatar = await ProfileImageProcessing.FitAsync(
-                        cropped, ProfileImageProcessing.AvatarMaxEdge);
+                        cropped, Contract.AvatarMaxEdge);
                     var preview = await ProfileImageCache.LoadAsync(
                         avatar,
                         $"pending-avatar-{Guid.NewGuid():N}",
@@ -586,7 +608,7 @@ internal sealed class ProfilePage : Component
             }
             catch (Exception)
             {
-                setCropError("没能完成裁切，换一张图片再试。");
+                setCropError(Copy.Get(CopyKeys.ProfileEditCropFailed));
                 // 弹窗已被主按钮关掉，这里重新打开，停在裁切步骤让用户重试。
                 ReopenEditor();
             }
@@ -600,7 +622,7 @@ internal sealed class ProfilePage : Component
         {
             // 主按钮在昵称不合法时就是禁用的；这里只防御状态竞态，不补校验提示。
             // 万一还是走到这里，把弹窗重新打开，别让刚选的图和文字一起被吞掉。
-            if (!IsValidNickname(nickname))
+            if (!Validation.IsValidNickname(nickname))
             {
                 ReopenEditor();
                 return;
@@ -684,36 +706,12 @@ internal sealed class ProfilePage : Component
         }
     }
 
-    /// <summary>
-    /// 昵称是否可以直接提交。规则与 userinfo 的 <c>normalize_nickname</c> 对齐：
-    /// 去掉首尾空白、NFC 归一化后是 1–32 个码点，且不含控制/格式字符。
-    /// </summary>
-    private static bool IsValidNickname(string value)
-    {
-        var cleaned = value.Trim().Normalize(NormalizationForm.FormC);
-        if (cleaned.Length == 0) return false;
-
-        var count = 0;
-        foreach (var rune in cleaned.EnumerateRunes())
-        {
-            var category = Rune.GetUnicodeCategory(rune);
-            if (category is UnicodeCategory.Control or UnicodeCategory.Format
-                or UnicodeCategory.Surrogate or UnicodeCategory.PrivateUse
-                or UnicodeCategory.OtherNotAssigned)
-            {
-                return false;
-            }
-
-            count++;
-        }
-
-        return count <= NicknameMaxChars;
-    }
-
     private static string DescribeSignIn(SessionState session) =>
         session.ExpiresAt is { } expiresAt
             ? session.IsAccessTokenExpired
-                ? "已经过期，重新登录一下"
-                : $"有效期到 {expiresAt.ToLocalTime():MM-dd HH:mm}"
-            : "已登录";
+                ? Copy.Get(CopyKeys.StatusExpired)
+                : Copy.Format(
+                    CopyKeys.ProfileExpiresAt,
+                    ("expiresAt", expiresAt.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.CurrentCulture)))
+            : Copy.Get(CopyKeys.StatusLoggedIn);
 }

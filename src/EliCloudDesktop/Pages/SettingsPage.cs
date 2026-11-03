@@ -1,4 +1,5 @@
 using EliCloudDesktop.Core;
+using EliCloudDesktop.Generated;
 using EliCloudDesktop.Ui;
 using Microsoft.UI.Reactor;
 using Microsoft.UI.Xaml;
@@ -17,8 +18,6 @@ internal sealed class SettingsPage : Component
 {
     private static readonly AppTheme[] Themes = [AppTheme.Light, AppTheme.Dark, AppTheme.System];
 
-    private static readonly string[] ThemeNames = ["浅色", "深色", "跟随系统"];
-
     private static int ThemeIndex(AppTheme theme) => Math.Max(0, Array.IndexOf(Themes, theme));
 
     public override Element Render()
@@ -26,37 +25,55 @@ internal sealed class SettingsPage : Component
         var state = UseContext(EliCloudContexts.State);
         var dispatch = UseContext(EliCloudContexts.Dispatch);
 
+        // ComboBox 的 ItemsSource 按引用 diff：每次 Render 新建 string[] 会把选择重置，
+        // 外观选择器看起来就像「选不中」。文案是静态的，整页生命周期只建一次。
+        var themeNames = UseMemo(
+            () => new[]
+            {
+                Copy.Get(CopyKeys.SettingsAppearanceLight),
+                Copy.Get(CopyKeys.SettingsAppearanceDark),
+                Copy.Get(CopyKeys.SettingsAppearanceSystem),
+            },
+            Array.Empty<object>());
+
+        var signOutLabel = Copy.Get(CopyKeys.SettingsAccountSignOut);
+
         var cards = new List<Element>
         {
             Widgets.SettingCard(
                 Widgets.GlyphIcon("\uE77B"),
-                "当前账号",
-                state.Session.IsAuthenticated ? state.Session.DisplayEmail : "还没有登录",
+                Copy.Get(CopyKeys.SettingsAccountTitle),
+                state.Session.IsAuthenticated
+                    ? state.Session.DisplayEmail
+                    : Copy.Get(CopyKeys.SettingsAccountSignedOut),
                 trailing: state.Session.IsAuthenticated
-                    ? Button("退出登录", () => dispatch(new AppAction.SignedOut()))
+                    ? Button(signOutLabel, () => dispatch(new AppAction.SignedOut()))
+                        .AutomationName(signOutLabel)
                     : null,
-                actionToolTip: "退出登录"),
+                actionToolTip: signOutLabel),
 
             Widgets.SettingCard(
                 Widgets.GlyphIcon("\uE790"),
-                "外观",
-                "浅色、深色，或者跟着 Windows 走",
-                trailing: ComboBox(ThemeNames, ThemeIndex(state.Theme), index =>
+                Copy.Get(CopyKeys.SettingsAppearanceTitle),
+                Copy.Get(CopyKeys.SettingsAppearanceDescription),
+                trailing: ComboBox(themeNames, ThemeIndex(state.Theme), index =>
                 {
                     if (index >= 0 && index < Themes.Length)
                     {
                         dispatch(new AppAction.ThemeChanged(Themes[index]));
                     }
-                }).MinWidth(150)),
+                }).MinWidth(150).AutomationName(Copy.Get(CopyKeys.SettingsAppearanceTitle))),
 
             Widgets.SettingCard(
                 Widgets.GlyphIcon("\uE946"),
-                "关于",
-                "EliCloud 桌面版 0.1"),
+                Copy.Get(CopyKeys.SettingsAboutTitle),
+                Copy.Format(CopyKeys.SettingsAboutVersion, ("version", PlatformConfig.AppVersion))),
         };
 
         return FlexColumn(
-            Widgets.PageHeader("设置", "账号与应用信息"),
+            Widgets.PageHeader(
+                Copy.Get(CopyKeys.SettingsTitle),
+                Copy.Get(CopyKeys.SettingsDescription)),
 
             ScrollView(VStack(4, [.. cards])
                 .Margin(DesignTokens.ContentPadding, 4, DesignTokens.ContentPadding, 40))

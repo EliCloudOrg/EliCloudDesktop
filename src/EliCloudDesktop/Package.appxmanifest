@@ -1,12 +1,13 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:systemai="http://schemas.microsoft.com/appx/manifest/systemai/windows10"
-  IgnorableNamespaces="uap rescap systemai">
+  IgnorableNamespaces="uap uap10 rescap systemai">
 
   <Identity
     Name="BFDE053E-1DC7-44CC-A187-E2EF5B3B64B3"
@@ -31,9 +32,16 @@
   </Resources>
 
   <Applications>
+    <!--
+      WinUI 3 / Win32 桌面应用必须以 mediumIL + packagedClassicApp 运行：
+      缺了这两个 uap10 属性，进程会跑在 AppContainer 里，%LOCALAPPDATA% 写入被拒
+      （settings.json 静默失败），MRT 的默认 ResourceLoader 也会拿不到资源。
+    -->
     <Application Id="App"
       Executable="$targetnametoken$.exe"
-      EntryPoint="$targetentrypoint$">
+      EntryPoint="$targetentrypoint$"
+      uap10:TrustLevel="mediumIL"
+      uap10:RuntimeBehavior="packagedClassicApp">
       <uap:VisualElements
         DisplayName="EliCloudDesktop"
         Description="EliCloudDesktop"

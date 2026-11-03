@@ -1,3 +1,4 @@
+using EliCloudDesktop.Generated;
 
 namespace EliCloudDesktop.Core;
 
@@ -9,10 +10,13 @@ namespace EliCloudDesktop.Core;
 /// 都是设计稿上定死的内容，不该由服务端临时决定。
 /// 服务端清单接口（<c>GET /core/v1/services</c>）只用来补充「在线与否」，
 /// 而它当前尚未部署（SDK README §7.1），所以状态改由客户端逐个探测得到。
+/// <para>
+/// 文案不在这里：标题/副标题只存 <c>contracts/copy</c> 的 key，渲染时走 <see cref="Copy"/>。
+/// </para>
 /// </remarks>
 /// <param name="Id">平台服务名 —— 与 <c>GetProvider(服务名)</c> 用的名字一致。</param>
-/// <param name="DisplayName">卡片标题 / Nav 条目文案。</param>
-/// <param name="Caption">卡片副标题（设计稿：绑定用户名以获取准入权限）。</param>
+/// <param name="TitleKey">卡片标题 / Nav 条目文案的 copy key。</param>
+/// <param name="CaptionKey">卡片副标题的 copy key（设计稿：绑定用户名以获取准入权限）。</param>
 /// <param name="NavGlyph">Nav 条目图标（Segoe Fluent Icons 码位）。</param>
 /// <param name="IconUri">卡片图标（ms-appx 语义化图片）。</param>
 /// <param name="RequiredScope">调用该服务需要的 scope。</param>
@@ -24,14 +28,21 @@ namespace EliCloudDesktop.Core;
 /// <param name="HasDedicatedPage">是否有专属页面（决定 Nav 条目是否可点、卡片是否显示箭头按钮）。</param>
 internal sealed record ServiceDescriptor(
     string Id,
-    string DisplayName,
-    string Caption,
+    string TitleKey,
+    string CaptionKey,
     string NavGlyph,
     string IconUri,
     string RequiredScope,
     ServiceAvailability DeclaredAvailability,
     bool IsProbeEnabled,
-    bool HasDedicatedPage);
+    bool HasDedicatedPage)
+{
+    /// <summary>卡片标题 / Nav 条目文案。</summary>
+    public string DisplayName => Copy.Get(TitleKey);
+
+    /// <summary>卡片副标题。</summary>
+    public string Caption => Copy.Get(CaptionKey);
+}
 
 /// <summary>服务清单本体。</summary>
 internal static class ServiceCatalog
@@ -39,8 +50,8 @@ internal static class ServiceCatalog
     /// <summary>MC 服务器白名单服务。</summary>
     public static readonly ServiceDescriptor Minecraft = new(
         Id: "mc",
-        DisplayName: "Minecraft 玩家服务器",
-        Caption: "绑定用户名以获取准入权限",
+        TitleKey: CopyKeys.ServiceMcTitle,
+        CaptionKey: CopyKeys.ServiceMcDescription,
         NavGlyph: "\uE7FC", // Segoe Fluent Icons: 方块/游戏手柄一类的占位码位
         IconUri: "ms-appx:///Assets/Images/service-icon-minecraft-block.png",
         RequiredScope: "mc:whitelist",
@@ -55,8 +66,8 @@ internal static class ServiceCatalog
     /// </summary>
     public static readonly ServiceDescriptor PdfDecrypt = new(
         Id: "pdf-decrypt",
-        DisplayName: "PDF 在线解密",
-        Caption: "上传加密 PDF，解密后直接下载",
+        TitleKey: CopyKeys.ServicePdfTitle,
+        CaptionKey: CopyKeys.ServicePdfDescription,
         NavGlyph: "\uE8A5", // Segoe Fluent Icons: 文档
         IconUri: "ms-appx:///Assets/Images/service-icon-pdf-lock.png",
         RequiredScope: "pdf:read",

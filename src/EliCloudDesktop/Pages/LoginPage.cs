@@ -2,6 +2,7 @@ using System.Globalization;
 using EliCloud.Sdk;
 using EliCloud.Sdk.Sso;
 using EliCloudDesktop.Core;
+using EliCloudDesktop.Generated;
 using EliCloudDesktop.Ui;
 using Microsoft.UI.Reactor;
 using Microsoft.UI.Reactor.Core;
@@ -88,10 +89,15 @@ internal sealed class LoginPage : Component
         }
 
         var isRegister = mode == AuthMode.Register;
+        // 注册的客户端前置校验与 contracts/validation.md §1 同构：只提前拦住明显不合法的值，
+        // 服务端仍是最终裁判。登录标识允许用户名或邮箱，所以登录侧只要求非空。
         var canSubmit = !busy
             && !string.IsNullOrWhiteSpace(identifier)
             && !string.IsNullOrEmpty(password)
-            && (!isRegister || !string.IsNullOrWhiteSpace(email));
+            && (!isRegister
+                || (Validation.IsValidRegistrationUsername(identifier)
+                    && Validation.LooksLikeEmail(email)
+                    && Validation.IsPlausiblePassword(password)));
 
         void Submit()
         {
@@ -143,43 +149,59 @@ internal sealed class LoginPage : Component
         // 登录：这一格收「用户名或邮箱」（服务端两种都能定位账号）。
         // 注册：只收用户名 —— 平台不允许拿邮箱当用户名。
         var identifierField = isRegister
-            ? TextBox(identifier, setIdentifier, placeholderText: "请输入用户名").Header("用户名")
-            : TextBox(identifier, setIdentifier, placeholderText: "请输入用户名或邮箱").Header("用户名或邮箱");
+            ? TextBox(
+                    identifier,
+                    setIdentifier,
+                    placeholderText: Copy.Get(CopyKeys.LoginUsernamePlaceholder))
+                .Header(Copy.Get(CopyKeys.LoginUsernameLabel))
+            : TextBox(
+                    identifier,
+                    setIdentifier,
+                    placeholderText: Copy.Get(CopyKeys.LoginUsernameOrEmailPlaceholder))
+                .Header(Copy.Get(CopyKeys.LoginUsernameOrEmailLabel));
 
         var form = new List<Element>
         {
             DesignTokens.Field(
                 identifierField.Width(FormWidth),
-                isRegister ? "只能用用户名，不能填邮箱" : null),
+                isRegister ? Copy.Get(CopyKeys.LoginUsernameHint) : null),
         };
 
         if (isRegister)
         {
-            form.Add(TextBox(email, setEmail, placeholderText: "用于接收验证邮件")
-                .Header("邮箱")
+            form.Add(TextBox(
+                    email,
+                    setEmail,
+                    placeholderText: Copy.Get(CopyKeys.LoginEmailPlaceholder))
+                .Header(Copy.Get(CopyKeys.LoginEmailLabel))
                 .Width(FormWidth));
         }
 
-        form.Add(PasswordBox(password, setPassword, placeholderText: "请输入密码")
-            .Header("密码")
+        form.Add(PasswordBox(
+                password,
+                setPassword,
+                placeholderText: Copy.Get(CopyKeys.LoginPasswordPlaceholder))
+            .Header(Copy.Get(CopyKeys.LoginPasswordLabel))
             .Width(FormWidth));
 
-        form.Add(Button(isRegister ? "注册" : "登录", Submit)
+        var submitLabel = Copy.Get(isRegister ? CopyKeys.LoginRegisterSubmit : CopyKeys.LoginSubmit);
+        form.Add(Button(submitLabel, Submit)
             .AccentButton()
             .Width(FormWidth)
             .IsEnabled(canSubmit)
-            .AutomationName(isRegister ? "注册" : "登录"));
+            .AutomationName(submitLabel));
 
-        form.Add(Button(isRegister ? "返回登录" : "创建账号", () =>
+        var switchLabel = Copy.Get(isRegister ? CopyKeys.LoginSwitchToLogin : CopyKeys.LoginSwitchToRegister);
+        form.Add(Button(switchLabel, () =>
         {
             setError(null);
             setPassword(string.Empty);
             setMode(isRegister ? AuthMode.SignIn : AuthMode.Register);
-        }).Width(FormWidth).AutomationName(isRegister ? "返回登录" : "创建账号"));
+        }).Width(FormWidth).AutomationName(switchLabel));
 
         var children = new List<Element>
         {
-            DesignTokens.Display("EliCloud").Foreground(Theme.PrimaryText),
+            DesignTokens.Display(Copy.Get(CopyKeys.AppProductName)).Foreground(Theme.PrimaryText),
             VStack(16, [.. form])
                 .Width(FormWidth)
                 .Margin(0, 16, 0, 0),
@@ -189,7 +211,7 @@ internal sealed class LoginPage : Component
         {
             children.Add(FlexRow(
                 ProgressRing().Width(20).Height(20),
-                DesignTokens.Body(isRegister ? "正在发送验证邮件…" : "正在登录…")
+                DesignTokens.Body(Copy.Get(isRegister ? CopyKeys.LoginRegisterBusy : CopyKeys.LoginBusy))
                     .Foreground(Theme.SecondaryText)) with
             {
                 ColumnGap = 8,
@@ -200,7 +222,9 @@ internal sealed class LoginPage : Component
 
         if (error is { Length: > 0 })
         {
-            children.Add(InfoBar(isRegister ? "注册失败" : "登录失败", error)
+            children.Add(InfoBar(
+                    Copy.Get(isRegister ? CopyKeys.LoginRegisterFailed : CopyKeys.LoginFailed),
+                    error)
                 .Severity(InfoBarSeverity.Error)
                 .Width(FormWidth));
         }

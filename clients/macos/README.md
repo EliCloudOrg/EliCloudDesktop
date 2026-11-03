@@ -1,4 +1,4 @@
-# macOS 客户端（Stage 4）
+﻿# macOS 客户端（Stage 4）
 
 SwiftUI + `EliCloudSDK`（`sdks/swift`）的参考客户端。原生窗口 / 侧栏 / 工具栏 / `Settings` scene，
 不套 Windows 风格标题栏。
@@ -54,6 +54,11 @@ xcodebuild test -project EliCloud.xcodeproj -scheme EliCloud \
 - **图片**：`fileImporter`（security-scoped）→ 类型/大小校验 → `ImagePipeline`（EXIF 方向、
   裁切 1:1 / 5:1、缩到 512/1600、PNG）→ multipart 上传；图片字节不落盘、不写日志。
 - **令牌**：只在 `EliCloudSDK.SessionStore` 内存里；界面不显示入口地址/令牌/scope。
+
+## CI 前置
+
+`macos.yml` 的 app 作业先跑 `gen-tokens/gen-copy/gen-build-config --check`，所以四端生成物
+（含 `src/EliCloudDesktop/Generated`、`src/EliCloudDesktop/Strings`、`clients/*/`）必须都已入库。
 
 ## 已知缺口
 

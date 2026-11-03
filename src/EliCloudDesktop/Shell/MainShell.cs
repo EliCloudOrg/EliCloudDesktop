@@ -1,4 +1,5 @@
 using EliCloudDesktop.Core;
+using EliCloudDesktop.Generated;
 using EliCloudDesktop.Pages;
 using EliCloudDesktop.Services;
 using EliCloudDesktop.Ui;
@@ -72,6 +73,13 @@ internal sealed class MainShell : Component
                     return () => { };
                 }
 
+                // 资料页和 Nav 共用同一张已解码头像；页面重建时不再重复取字节。
+                if (ProfileImageCache.TryGet(avatarSha, out var cachedAvatar))
+                {
+                    setNavAvatar(cachedAvatar);
+                    return () => { };
+                }
+
                 var cts = new CancellationTokenSource();
                 _ = LoadAvatarAsync(cts.Token);
                 return () =>
@@ -124,7 +132,7 @@ internal sealed class MainShell : Component
                 IsSettingsVisible = true,
                 IsBackButtonVisible = NavigationViewBackButtonVisible.Collapsed,
                 IsPaneToggleButtonVisible = false,
-                PaneTitle = "EliCloud",
+                PaneTitle = Copy.Get(CopyKeys.AppProductName),
                 OpenPaneLength = DesignTokens.NavPaneWidth,
                 PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
 
@@ -137,14 +145,24 @@ internal sealed class MainShell : Component
                 },
                 OnSettingsSelected = () => nav.Replace(new Route.Settings()),
             })
-            .Set(native => NavFooterProfileItem.Apply(
-                native,
-                profileSignature,
-                lastProfileSignature,
-                state.Session,
-                displayName,
-                navAvatar,
-                AvatarUri));
+            .Set(native =>
+            {
+                // 内置「设置」项的文字由 WinUI 按系统语言给（英文系统上会是 Settings）；
+                // 文案源只有 zh-CN，所以显式覆盖成 copy 里的「设置」。
+                if (native.SettingsItem is NavigationViewItem settingsItem)
+                {
+                    settingsItem.Content = Copy.Get(CopyKeys.NavSettings);
+                }
+
+                NavFooterProfileItem.Apply(
+                    native,
+                    profileSignature,
+                    lastProfileSignature,
+                    state.Session,
+                    displayName,
+                    navAvatar,
+                    AvatarUri);
+            });
 
         // 外层（App 的标题栏 + 内容区）已经给出了这块的尺寸，这里只管铺满。
         return view;
@@ -158,13 +176,13 @@ internal sealed class MainShell : Component
     {
         var items = new List<NavigationViewItemData>
         {
-            NavItem("主页", icon: "\uE80F", tag: RouteTags.Home),
+            NavItem(Copy.Get(CopyKeys.NavHome), icon: "\uE80F", tag: RouteTags.Home),
         };
 
         var available = ServiceCatalog.All.Where(d => state.Services.IsAvailable(d.Id)).ToList();
         if (available.Count == 0) return items;
 
-        items.Add(NavItemHeader("服务列表"));
+        items.Add(NavItemHeader(Copy.Get(CopyKeys.NavServices)));
 
         foreach (var descriptor in available)
         {
@@ -190,7 +208,8 @@ internal sealed class MainShell : Component
     private static Element UnknownServicePage(string serviceId) =>
         VStack(
             8,
-            DesignTokens.PageTitle("服务页缺失").Foreground(Theme.PrimaryText),
-            DesignTokens.Body($"清单里的服务 “{serviceId}” 还没有对应的页面实现。").Foreground(Theme.SecondaryText))
+            DesignTokens.PageTitle(Copy.Get(CopyKeys.NavMissingPage)).Foreground(Theme.PrimaryText),
+            DesignTokens.Body(Copy.Format(CopyKeys.NavMissingPageDetail, ("serviceId", serviceId)))
+                .Foreground(Theme.SecondaryText))
         .Margin(DesignTokens.ContentPadding);
 }

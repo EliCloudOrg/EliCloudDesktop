@@ -9,11 +9,16 @@ namespace EliCloudDesktop.Services;
 /// <remarks>
 /// WinUI 的 <see cref="BitmapImage"/> 有 UI 线程亲和性，所以这个类只在 UI 线程调用
 /// （页面 / Nav 的异步 effect 都回到 UI 上下文）。图片变化时 sha256 一定变化，缓存键是稳定的。
+/// 页面重建时先走 <see cref="TryGet"/>：解码过的图直接复用，不再向 userinfo 取一次字节。
 /// </remarks>
 internal static class ProfileImageCache
 {
     private const int MaxEntries = 64;
     private static readonly Dictionary<string, BitmapImage> Cache = new(StringComparer.Ordinal);
+
+    /// <summary>已经解码过的图直接复用，调用方不必再走一次 userinfo 取字节。</summary>
+    public static bool TryGet(string sha256, out BitmapImage? bitmap) =>
+        Cache.TryGetValue(sha256, out bitmap);
 
     public static async Task<BitmapImage> LoadAsync(byte[] bytes, string sha256, CancellationToken ct)
     {

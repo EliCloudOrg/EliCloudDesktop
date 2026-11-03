@@ -1,9 +1,11 @@
 using Microsoft.UI.Reactor;
-using static Microsoft.UI.Reactor.Factories;
-
 using Microsoft.UI.Reactor.Core;
 using Microsoft.UI.Reactor.Layout;
 using Microsoft.UI.Reactor.Navigation;
+using Microsoft.UI.Xaml;
+using static Microsoft.UI.Reactor.Factories;
+
+using G = EliCloud.Generated.DesignTokens;
 
 namespace EliCloudDesktop.Ui;
 
@@ -11,9 +13,17 @@ namespace EliCloudDesktop.Ui;
 /// Figma 设计稿里的版面与排版标尺，逐项对应 <c>EliCloudDesktopUI.fig</c> 的实测值。
 /// </summary>
 /// <remarks>
-/// 稿子用的是 **Windows 11 官方设计组件库**，所以这里的字号/行高正好落在
-/// WinUI 的文本样式阶梯上（Display 68/92、Title 28/36、BodyStrong 14/20、Body 14/20、Caption 12/16），
-/// 颜色也一律走 <c>Theme.*</c> 主题令牌 —— 亮/暗/高对比度三套主题因此自动成立。
+/// <para>
+/// 稿子用的是 **Windows 11 官方设计组件库**，所以文字一律落在 WinUI 官方文本样式阶梯上
+/// （<c>TitleTextBlockStyle</c> / <c>BodyStrongTextBlockStyle</c> / <c>BodyTextBlockStyle</c> /
+/// <c>CaptionTextBlockStyle</c>）；只有 Display 这一档官方没有对应样式，用 `design/tokens.json`
+/// 里登记过的 custom 令牌（<see cref="G.TypeDisplaySize"/> 等）。颜色一律走 <c>Theme.*</c>，
+/// 亮/暗/高对比度三套主题因此自动成立。
+/// </para>
+/// <para>
+/// 这里不再写裸字号/裸圆角：数值来自生成物 <c>Generated/DesignTokens.g.cs</c>（不要手改，
+/// 改 <c>design/tokens.json</c> 再跑生成器），有明确的官方来源。
+/// </para>
 /// </remarks>
 internal static class DesignTokens
 {
@@ -23,6 +33,12 @@ internal static class DesignTokens
 
     /// <summary>设计稿画布高。</summary>
     public const double WindowHeight = 800;
+
+    /// <summary>最小窗口宽（design/windows.md §1：再小就退化为内容滚动）。</summary>
+    public const double WindowMinWidth = 1000;
+
+    /// <summary>最小窗口高。</summary>
+    public const double WindowMinHeight = 640;
 
     /// <summary>自定义标题栏高度（稿：1252×48）。</summary>
     public const double TitleBarHeight = 48;
@@ -36,8 +52,8 @@ internal static class DesignTokens
     /// <summary>主页 Hero 横幅高度（稿：932×156）。</summary>
     public const double HeroBannerHeight = 156;
 
-    /// <summary>个人资料页头图比例：设计稿横幅 932×186 ≈ 5:1，裁切与显示共用这一档。</summary>
-    public const double BannerAspectRatio = 5d;
+    /// <summary>个人资料页头图比例：设计稿横幅 932×186 ≈ 5:1，裁切与显示共用契约值。</summary>
+    public const double BannerAspectRatio = Core.Contract.BannerAspectRatio;
 
     /// <summary>服务卡片最小高度（稿：820×64）。</summary>
     public const double ServiceCardMinHeight = 64;
@@ -47,9 +63,6 @@ internal static class DesignTokens
 
     /// <summary>服务卡片内边距。</summary>
     public const double ServiceCardPaddingV = 13;
-
-    /// <summary>卡片圆角（WinUI 控件圆角令牌 <c>ControlCornerRadius</c>）。</summary>
-    public const double CardCornerRadius = 4;
 
     /// <summary>服务图标边长（稿：16×16）。</summary>
     public const double IconSize = 16;
@@ -63,33 +76,29 @@ internal static class DesignTokens
     /// <summary>Nav 页脚资料条目的高度（稿：320×79）。</summary>
     public const double NavProfileItemHeight = 79;
 
-    // ── 排版 ──────────────────────────────────────────────────────────
-    private const string DisplayFamily = "Segoe UI Variable Display";
-    private const string TextFamily = "Segoe UI Variable Text";
-
+    // ── 排版（官方文本样式；Display 是登记过的 custom 令牌） ──────────────
     /// <summary>登录页产品名（稿：Segoe UI Variable Semibold Display 68/92）。</summary>
     public static TextBlockElement Display(string text) =>
-        TextBlock(text).FontFamily(DisplayFamily).FontSize(68).LineHeight(92).SemiBold();
+        TextBlock(text)
+            .FontFamily(G.TypeDisplayFamilyKey)
+            .FontSize(G.TypeDisplaySize)
+            .LineHeight(G.TypeDisplayLineHeight)
+            .SemiBold();
 
-    /// <summary>页面主标题（稿：28/36 Semibold Display）。</summary>
-    public static TextBlockElement PageTitle(string text) =>
-        TextBlock(text).FontFamily(DisplayFamily).FontSize(28).LineHeight(36).SemiBold();
+    /// <summary>页面主标题（官方 <c>TitleTextBlockStyle</c>：28/36 Semibold Display）。</summary>
+    public static TextBlockElement PageTitle(string text) => Styled(text, G.TypeTitleKey);
 
-    /// <summary>分组标题（稿：14/20 Semibold Text）。</summary>
-    public static TextBlockElement SectionTitle(string text) =>
-        TextBlock(text).FontFamily(TextFamily).FontSize(14).LineHeight(20).SemiBold();
+    /// <summary>分组标题（官方 <c>BodyStrongTextBlockStyle</c>：14/20 Semibold Text）。</summary>
+    public static TextBlockElement SectionTitle(string text) => Styled(text, BodyStrongTextBlockStyle);
 
-    /// <summary>卡片标题（稿：14/20 Regular Text）。</summary>
-    public static TextBlockElement CardTitle(string text) =>
-        TextBlock(text).FontFamily(TextFamily).FontSize(14).LineHeight(20);
+    /// <summary>卡片标题（官方 <c>BodyTextBlockStyle</c>：14/20 Regular Text）。</summary>
+    public static TextBlockElement CardTitle(string text) => Styled(text, G.TypeBodyKey);
 
-    /// <summary>正文（稿：14/20 Regular Text）。</summary>
-    public static TextBlockElement Body(string text) =>
-        TextBlock(text).FontFamily(TextFamily).FontSize(14).LineHeight(20);
+    /// <summary>正文（官方 <c>BodyTextBlockStyle</c>：14/20 Regular Text）。</summary>
+    public static TextBlockElement Body(string text) => Styled(text, G.TypeBodyKey);
 
-    /// <summary>卡片副标题（稿：12/16 Regular Small）。</summary>
-    public static TextBlockElement CardCaption(string text) =>
-        TextBlock(text).FontFamily(TextFamily).FontSize(12).LineHeight(16);
+    /// <summary>卡片副标题（官方 <c>CaptionTextBlockStyle</c>：12/16 Regular Small）。</summary>
+    public static TextBlockElement CardCaption(string text) => Styled(text, G.TypeCaptionKey);
 
     /// <summary>
     /// 输入框下面那行提示 / 约束说明（12/16 Regular Small，Secondary）。
@@ -114,4 +123,11 @@ internal static class DesignTokens
             .Height(1)
             .Background(Theme.DividerStroke)
             .Margin(0, topMargin, 0, 0);
+
+    /// <summary>WinUI 官方 14/20 Semibold 文本样式（令牌表里没有单独语义键，直接用官方资源键）。</summary>
+    private const string BodyStrongTextBlockStyle = "BodyStrongTextBlockStyle";
+
+    /// <summary>套用官方文本样式（字体族/字号/行高/字重都来自 WinUI 官方 Style，不手写数值）。</summary>
+    private static TextBlockElement Styled(string text, string styleKey) =>
+        TextBlock(text).Set(block => OfficialStyles.Apply(block, styleKey));
 }

@@ -15,6 +15,16 @@
     <EnableMsixTooling>true</EnableMsixTooling>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!--
+      应用版本（语义化）—— 与 design/build-config.json 的 appVersion、Package.appxmanifest 的
+      Identity/@Version 保持同一档。UA 与「关于」页都从这里来（构建期注入，见 GeneratePlatformConfig）。
+    -->
+    <Version>0.1.0</Version>
+    <!--
+      文案只有 zh-CN（contracts/copy 是唯一源）。PRI 的默认语言必须是 zh-CN，
+      否则 en-US 默认语言会与 zh-CN 限定资源对不上（PRI257 警告 + 非中文系统取不到文案）。
+    -->
+    <DefaultLanguage>zh-CN</DefaultLanguage>
 
     <!--
       两套开发构建方式 + 一套发布配置：
@@ -44,18 +54,43 @@
   </PropertyGroup>
 
   <!--
-    平台入口地址 —— **构建时注入**，运行时不提供任何读取/修改入口（客户端不展示它，
-    也不接受环境变量或配置文件覆盖，因为它属于我方基础设施，不是用户设置）。
+    ========== 平台入口地址：构建时注入、运行时只读 ==========
+    **仓库里不存真实入口地址**（它属于部署信息，写进源码等于泄露）。
+    取值优先级（先到先得）：
+      1) -p:EliCloudPlatformBaseAddress=https://your-entry   （CI / 一次性构建；全局属性不可被文件覆盖）
+      2) 本机私有文件 certs\local.props 里的 <EliCloudPlatformBaseAddress>
+         （certs/ 整个目录在 .gitignore；Visual Studio 里构建只能用这条，VS 传不了 -p:）
+      3) 环境变量 ELICLOUD_BASE_URL_PROD（与 design/build-config.json 同名，CI secrets 用）
+      4) Debug-Local 固定 http://127.0.0.1:8080（本机 local-dev 服务端）
+    其它配置一个都没给时，EliCloudValidatePlatformBaseAddress 直接让构建失败，而不是运行时才崩。
 
-    默认落在 Debug-Prod / Release（远程）；Debug-Local 指向本机服务端。
-    想临时打到别的环境，用 -p:EliCloudPlatformBaseAddress=... 覆盖（显式传入优先）。
+    值同时写进程序集元数据与编译期常量（Core/PlatformConfig.cs）。
+  -->
 
-    值会被写进程序集元数据，由 Core/PlatformConfig.cs 在首次使用时读出并校验。
+  <!--
+    Debug-Local 先于本机私有配置落值：调试本机服务端不应该被 local.props 里的生产地址顶掉。
+    要在 Debug-Local 下连别的环境，显式传 -p:EliCloudPlatformBaseAddress=...。
   -->
   <PropertyGroup>
-    <EliCloudPlatformBaseAddress Condition="'$(Configuration)' == 'Debug-Local'">http://127.0.0.1:8080</EliCloudPlatformBaseAddress>
-    <EliCloudPlatformBaseAddress Condition="'$(EliCloudPlatformBaseAddress)' == ''">https://146.56.237.33</EliCloudPlatformBaseAddress>
+    <EliCloudPlatformBaseAddress Condition="'$(EliCloudPlatformBaseAddress)' == '' and '$(Configuration)' == 'Debug-Local'">http://127.0.0.1:8080</EliCloudPlatformBaseAddress>
   </PropertyGroup>
+
+  <!-- 本机私有配置：证书密码 + 非 local 配置的入口地址。Debug-Local 不读它，避免误连生产。 -->
+  <Import Project="$(MSBuildThisFileDirectory)certs\local.props"
+          Condition="Exists('$(MSBuildThisFileDirectory)certs\local.props') and '$(Configuration)' != 'Debug-Local'" />
+
+  <PropertyGroup>
+    <EliCloudPlatformBaseAddress Condition="'$(EliCloudPlatformBaseAddress)' == '' and '$(ELICLOUD_BASE_URL_PROD)' != ''">$(ELICLOUD_BASE_URL_PROD)</EliCloudPlatformBaseAddress>
+  </PropertyGroup>
+
+  <Target Name="EliCloudValidatePlatformBaseAddress" BeforeTargets="GeneratePlatformConfig">
+    <Error Condition="'$(EliCloudPlatformBaseAddress)' == ''"
+           Text="没有配置平台入口地址。仓库里不存真实地址，请用可替换来源之一：(1) 命令行 -p:EliCloudPlatformBaseAddress=https://your-entry；(2) 本机文件 src\EliCloudDesktop\certs\local.props 里加 &lt;EliCloudPlatformBaseAddress&gt;https://your-entry&lt;/EliCloudPlatformBaseAddress&gt;（certs/ 已在 .gitignore）；(3) 环境变量 ELICLOUD_BASE_URL_PROD。" />
+    <Error Condition="!$([System.String]::Copy('$(EliCloudPlatformBaseAddress)').StartsWith('https://')) and !$([System.String]::Copy('$(EliCloudPlatformBaseAddress)').StartsWith('http://'))"
+           Text="EliCloudPlatformBaseAddress 只接受 http / https：'$(EliCloudPlatformBaseAddress)'" />
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(EliCloudPlatformBaseAddress)', '^https?://[^/?#\s]+/?$'))"
+           Text="EliCloudPlatformBaseAddress 必须是 http(s)://host[:port] 形式的绝对地址，不能带路径、查询串或空白：'$(EliCloudPlatformBaseAddress)'" />
+  </Target>
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
@@ -81,6 +116,10 @@
       <_PlatformConfigLine Include="{" />
       <_PlatformConfigLine Include="    /// &lt;summary&gt;构建时注入的平台入口地址（未校验的原始值，校验见 PlatformConfig.cs）。&lt;/summary&gt;" />
       <_PlatformConfigLine Include="    public const string InjectedBaseAddress = &quot;$(EliCloudPlatformBaseAddress)&quot;%3B" />
+      <_PlatformConfigLine Include="    /// &lt;summary&gt;应用版本（与 design/build-config.json 的 appVersion 同档）。&lt;/summary&gt;" />
+      <_PlatformConfigLine Include="    public const string AppVersion = &quot;$(Version)&quot;%3B" />
+      <_PlatformConfigLine Include="    /// &lt;summary&gt;UA：EliCloud/{version} (windows)，不带入口地址。&lt;/summary&gt;" />
+      <_PlatformConfigLine Include="    public const string UserAgent = &quot;EliCloud/$(Version) (windows)&quot;%3B" />
       <_PlatformConfigLine Include="}" />
     </ItemGroup>
     <WriteLinesToFile File="$(IntermediateOutputPath)PlatformConfig.g.cs" Lines="@(_PlatformConfigLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
@@ -114,6 +153,20 @@
 
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <!--
+    共享层生成物（**勿手改**）：
+      clients/windows/hello/Generated/DesignTokens.g.cs  ← design/tokens.json（官方主题资源键 + 登记过的品牌值）
+      src/EliCloudDesktop/Generated/CopyKeys.g.cs        ← contracts/copy + contracts/errors（已在工程目录内，默认包含）
+      src/EliCloudDesktop/Strings/zh-CN/Resources.resw   ← contracts/copy（已在工程目录内，由 WinUI PRI 目标编进 resources.pri）
+
+    令牌表留在 hello 工程里仍由该工程做纯 C# 消费验证；主应用用 Compile Link 复用同一份生成物，
+    不复制、不手写第二份。
+  -->
+  <ItemGroup>
+    <Compile Include="..\..\clients\windows\hello\Generated\DesignTokens.g.cs"
+             Link="Generated\DesignTokens.g.cs" />
   </ItemGroup>
 
   <!--
@@ -204,18 +257,14 @@
   </PropertyGroup>
 
   <!--
-    ========== 签名证书密码从哪来 ==========
-    按优先级：
-      1) 命令行 -p:MsixDevCertPassword=<Password>（CI 与一次性构建走这条）
-      2) 本机私有文件 certs\local.props（**在 Visual Studio 里构建必须靠这条**：VS 传不了 -p:）
-      3) 环境变量 MSIXPKG_DEV_CERT_PASSWORD
-
+    ========== 本机私有配置 ==========
+    certs\local.props（已被上面的 Import 读入）可以包含：
+      - MsixDevCertPassword：签名证书密码（命令行 -p: 优先，环境变量 MSIXPKG_DEV_CERT_PASSWORD 兜底）
+      - EliCloudPlatformBaseAddress：平台入口地址（仓库里不存真实值）
     certs/ 整个目录都在 .gitignore 里，所以 local.props 与 .pfx 都不会入库。
-    这个 Import 必须放在下面「Msixpkg integration」块**之前**：MSBuild 按文档顺序求值属性，
-    放到后面就来不及参与 PackageCertificatePassword 的赋值。
+    Import 必须放在「Msixpkg integration」块之前：MSBuild 按文档顺序求值属性，
+    放到后面就来不及参与 PackageCertificatePassword 的赋值（本文件里它已在最上方）。
   -->
-  <Import Project="$(MSBuildThisFileDirectory)certs\local.props"
-          Condition="'$(MsixDevCertPassword)' == '' and Exists('$(MSBuildThisFileDirectory)certs\local.props')" />
 
   <!-- ======== Msixpkg integration (appended by msixpkg-adopt) ======== -->
   <!--

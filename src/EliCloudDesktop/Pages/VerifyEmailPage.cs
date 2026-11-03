@@ -1,6 +1,7 @@
 using EliCloud.Sdk;
 using EliCloud.Sdk.Sso;
 using EliCloudDesktop.Core;
+using EliCloudDesktop.Generated;
 using EliCloudDesktop.Ui;
 using Microsoft.UI.Reactor;
 using Microsoft.UI.Reactor.Core;
@@ -129,7 +130,7 @@ internal sealed class VerifyEmailPage : Component<VerifyEmailProps>
                                     or EliCloudErrorCodes.RegistrationExpired)
                             {
                                 setTerminal(RegistrationStatuses.Expired);
-                                setError("这次注册已经失效了。可以重新发送，或者返回登录。");
+                                setError(Copy.Get(CopyKeys.VerifyInvalidated));
                                 return;
                             }
                             catch (EliCloudApiException ex) when (ex.IsRateLimited)
@@ -142,7 +143,7 @@ internal sealed class VerifyEmailPage : Component<VerifyEmailProps>
                                 failures++;
                                 if (failures >= 3)
                                 {
-                                    setError("网络不太好，正在重试…");
+                                    setError(Copy.Get(CopyKeys.VerifyNetworkRetry));
                                 }
                                 var seconds = Math.Min(10, 2 + failures * 2);
                                 await Task.Delay(TimeSpan.FromSeconds(seconds), ct);
@@ -176,7 +177,7 @@ internal sealed class VerifyEmailPage : Component<VerifyEmailProps>
                     }
                     catch (Exception)
                     {
-                        Props.OnNeedsSignIn("邮箱已确认，请用刚才的密码登录。");
+                        Props.OnNeedsSignIn(Copy.Get(CopyKeys.VerifyConfirmedSignIn));
                     }
                     finally
                     {
@@ -192,8 +193,8 @@ internal sealed class VerifyEmailPage : Component<VerifyEmailProps>
         // expired/failed 也允许重发：服务端会把该 pending 重新激活。
         var canResend = !busy && remaining == 0;
         var resendLabel = remaining > 0
-            ? $"重新发送验证邮件（{remaining} 秒）"
-            : "重新发送验证邮件";
+            ? Copy.Format(CopyKeys.VerifyResendCountdown, ("seconds", remaining))
+            : Copy.Get(CopyKeys.VerifyResend);
 
         void Resend()
         {
@@ -260,17 +261,19 @@ internal sealed class VerifyEmailPage : Component<VerifyEmailProps>
 
         var children = new List<Element>
         {
-            DesignTokens.Display("EliCloud").Foreground(Theme.PrimaryText),
-            DesignTokens.PageTitle("验证邮箱").Foreground(Theme.PrimaryText).Margin(0, 12, 0, 0),
-            DesignTokens.Body($"我们已向 {Props.Email} 发送了一封验证邮件。").Foreground(Theme.PrimaryText).TextWrapping(),
-            DesignTokens.Hint("打开邮件并点击「完成邮箱确认」，然后回到这里；窗口会自动继续。"),
+            DesignTokens.Display(Copy.Get(CopyKeys.AppProductName)).Foreground(Theme.PrimaryText),
+            DesignTokens.PageTitle(Copy.Get(CopyKeys.VerifyTitle))
+                .Foreground(Theme.PrimaryText).Margin(0, 12, 0, 0),
+            DesignTokens.Body(Copy.Format(CopyKeys.VerifySent, ("email", Props.Email)))
+                .Foreground(Theme.PrimaryText).TextWrapping(),
+            DesignTokens.Hint(Copy.Get(CopyKeys.VerifyInstructions)),
         };
 
         if (terminal is null && !busy)
         {
             children.Add(FlexRow(
                 ProgressRing().Width(20).Height(20),
-                DesignTokens.Body("正在等待邮箱确认…").Foreground(Theme.SecondaryText)) with
+                DesignTokens.Body(Copy.Get(CopyKeys.VerifyWaiting)).Foreground(Theme.SecondaryText)) with
             {
                 ColumnGap = 8,
                 AlignItems = FlexAlign.Center,
@@ -282,7 +285,7 @@ internal sealed class VerifyEmailPage : Component<VerifyEmailProps>
         {
             children.Add(FlexRow(
                 ProgressRing().Width(20).Height(20),
-                DesignTokens.Body("正在处理…").Foreground(Theme.SecondaryText)) with
+                DesignTokens.Body(Copy.Get(CopyKeys.CommonProcessing)).Foreground(Theme.SecondaryText)) with
             {
                 ColumnGap = 8,
                 AlignItems = FlexAlign.Center,
@@ -292,13 +295,15 @@ internal sealed class VerifyEmailPage : Component<VerifyEmailProps>
 
         if (error is { Length: > 0 })
         {
-            children.Add(InfoBar("邮箱验证", error)
+            children.Add(InfoBar(Copy.Get(CopyKeys.VerifyFailedTitle), error)
                 .Severity(InfoBarSeverity.Error)
                 .Width(FormWidth));
         }
         else if (terminal is not null)
         {
-            children.Add(InfoBar("这次注册没有完成", "可以重新发送验证邮件，或者返回登录。")
+            children.Add(InfoBar(
+                    Copy.Get(CopyKeys.VerifyTerminalTitle),
+                    Copy.Get(CopyKeys.VerifyTerminalDetail))
                 .Severity(InfoBarSeverity.Warning)
                 .Width(FormWidth));
         }
@@ -307,17 +312,19 @@ internal sealed class VerifyEmailPage : Component<VerifyEmailProps>
             .AccentButton()
             .Width(FormWidth)
             .IsEnabled(canResend)
-            .AutomationName("重新发送验证邮件"));
+            .AutomationName(Copy.Get(CopyKeys.VerifyResend)));
 
-        children.Add(Button("换一个邮箱", () => Cancel(Props.OnCancel))
+        var changeEmailLabel = Copy.Get(CopyKeys.VerifyChangeEmail);
+        children.Add(Button(changeEmailLabel, () => Cancel(Props.OnCancel))
             .Width(FormWidth)
             .IsEnabled(!busy)
-            .AutomationName("换一个邮箱"));
+            .AutomationName(changeEmailLabel));
 
-        children.Add(Button("返回登录", () => Props.OnBackToSignIn())
+        var backToLoginLabel = Copy.Get(CopyKeys.VerifyBackToLogin);
+        children.Add(Button(backToLoginLabel, () => Props.OnBackToSignIn())
             .Width(FormWidth)
             .IsEnabled(!busy)
-            .AutomationName("返回登录"));
+            .AutomationName(backToLoginLabel));
 
         return Grid(
             columns: [GridSize.Star()],
@@ -336,11 +343,11 @@ internal sealed class VerifyEmailPage : Component<VerifyEmailProps>
 
     private static string DescribeTerminal(RegistrationStatus status) =>
         status.Status == RegistrationStatuses.Expired
-            ? "验证链接已过期。可以重新发送，或者返回登录。"
+            ? Copy.Get(CopyKeys.VerifyExpired)
             : status.Reason switch
             {
-                "username_taken" => "这个用户名刚刚被占用了。换一个用户名再试。",
-                "email_taken" => "这个邮箱刚刚被注册了。可用别的邮箱，或返回登录。",
-                _ => "这次注册没有完成。可以重新发送，或者返回登录。",
+                "username_taken" => Copy.Get(CopyKeys.VerifyUsernameTaken),
+                "email_taken" => Copy.Get(CopyKeys.VerifyEmailTaken),
+                _ => Copy.Get(CopyKeys.VerifyIncomplete),
             };
 }

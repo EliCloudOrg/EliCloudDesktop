@@ -1,4 +1,6 @@
 
+using EliCloudDesktop.Generated;
+
 namespace EliCloudDesktop.Core;
 
 /// <summary>
@@ -34,15 +36,15 @@ internal enum ServiceAvailability
     Unavailable,
 }
 
-/// <summary>服务状态的显示文案 —— 与 Figma 稿上的四处状态文案逐字对齐。</summary>
+/// <summary>服务状态的显示文案 —— 与 Figma 稿上的四处状态文案逐字对齐（文案源在 contracts/copy）。</summary>
 internal static class ServiceAvailabilityText
 {
-    public static string Label(this ServiceAvailability availability) => availability switch
+    public static string Label(this ServiceAvailability availability) => Copy.Get(availability switch
     {
-        ServiceAvailability.Available => "可用",
-        ServiceAvailability.Unavailable => "不可用",
-        ServiceAvailability.Maintenance => "维护中",
-        ServiceAvailability.ComingSoon => "即将上线",
-        _ => "检测中",
-    };
+        ServiceAvailability.Available => CopyKeys.StatusAvailable,
+        ServiceAvailability.Unavailable => CopyKeys.StatusUnavailable,
+        ServiceAvailability.Maintenance => CopyKeys.StatusMaintenance,
+        ServiceAvailability.ComingSoon => CopyKeys.StatusComingSoon,
+        _ => CopyKeys.StatusProbing,
+    });
 }

@@ -1,3 +1,4 @@
+using EliCloudDesktop.Core;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
@@ -22,11 +23,11 @@ namespace EliCloudDesktop.Services;
 /// </remarks>
 internal static class ProfileImageProcessing
 {
-    /// <summary>头像的最长边（像素）。显示尺寸 64，512 足够应付高 DPI 与后续放大展示。</summary>
-    public const int AvatarMaxEdge = 512;
+    /// <summary>头像的最长边（像素）：契约值 512，显示尺寸 64，足够高 DPI。</summary>
+    public const int AvatarMaxEdge = Contract.AvatarMaxEdge;
 
-    /// <summary>头图的最长边（像素）。页头横幅按 932×183 显示，1600 宽足够 2x 屏。</summary>
-    public const int BannerMaxEdge = 1600;
+    /// <summary>头图的最长边（像素）：契约值 1600，页头横幅按 932×183 显示。</summary>
+    public const int BannerMaxEdge = Contract.BannerMaxEdge;
 
     /// <summary>把用户挑的图片解码成 <c>ImageCropper.Source</c> 需要的 <see cref="WriteableBitmap"/>。</summary>
     /// <remarks>

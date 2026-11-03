@@ -1,4 +1,5 @@
 using EliCloud.Sdk.Sso;
+using EliCloudDesktop.Generated;
 
 namespace EliCloudDesktop.Core;
 
@@ -32,10 +33,10 @@ internal sealed record SessionState(
     public bool IsAuthenticated => !string.IsNullOrEmpty(AccessToken);
 
     /// <summary>Nav 页脚条目与资料页标题显示的名字。</summary>
-    public string DisplayName => string.IsNullOrWhiteSpace(Username) ? "未登录" : Username;
+    public string DisplayName => string.IsNullOrWhiteSpace(Username) ? Copy.Get(CopyKeys.StatusNotLoggedIn) : Username;
 
     /// <summary>Nav 页脚条目与资料页副标题显示的邮箱。</summary>
-    public string DisplayEmail => string.IsNullOrWhiteSpace(Email) ? "未绑定邮箱" : Email;
+    public string DisplayEmail => string.IsNullOrWhiteSpace(Email) ? Copy.Get(CopyKeys.ProfileEmailUnbound) : Email;
 
     /// <summary>access token 是否已过期（留 60 秒余量）。</summary>
     public bool IsAccessTokenExpired =>

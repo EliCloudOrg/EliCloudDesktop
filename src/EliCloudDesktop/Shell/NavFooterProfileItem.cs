@@ -1,4 +1,6 @@
 using EliCloudDesktop.Core;
+using EliCloudDesktop.Generated;
+using EliCloudDesktop.Ui;
 using Microsoft.UI.Reactor;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -42,8 +44,9 @@ internal static class NavFooterProfileItem
     /// <remarks>
     /// 内容是一棵控件树（头像 + 两行文字），WinUI 从中推不出一个有意义的名字，
     /// 所以必须显式给；顺带也让 UI 自动化测试能按名字找到这个条目。
+    /// 文案来自 contracts/copy（nav.profile）。
     /// </remarks>
-    public const string AccessibleName = "个人资料";
+    public static string AccessibleName => Copy.Get(CopyKeys.NavProfile);
 
     /// <summary>往页脚补一个个人资料条目；已存在则按需要刷新内容。</summary>
     /// <param name="view">底层 NavigationView（逃生舱拿到的实例）。</param>
@@ -88,6 +91,10 @@ internal static class NavFooterProfileItem
         lastSignature.Current = signature;
     }
 
+    /// <summary>套用 WinUI 官方文本样式；资源不在时保留 TextBlock 默认值（不影响可用性）。</summary>
+    private static void ApplyTextStyle(TextBlock block, string styleKey) =>
+        OfficialStyles.Apply(block, styleKey);
+
     private static UIElement BuildContent(
         SessionState session,
         string displayName,
@@ -96,17 +103,17 @@ internal static class NavFooterProfileItem
     {
         var avatar = new Image
         {
-            Width = 64,
-            Height = 64,
+            Width = DesignTokens.AvatarSize,
+            Height = DesignTokens.AvatarSize,
             Stretch = Stretch.UniformToFill,
             Source = avatarSource ?? new BitmapImage(new Uri(avatarUri)),
         };
 
         var avatarHost = new Border
         {
-            Width = 64,
-            Height = 64,
-            CornerRadius = new CornerRadius(32),
+            Width = DesignTokens.AvatarSize,
+            Height = DesignTokens.AvatarSize,
+            CornerRadius = new CornerRadius(DesignTokens.AvatarSize / 2),
             Child = avatar,
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -117,26 +124,29 @@ internal static class NavFooterProfileItem
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(12, 0, 0, 0),
         };
-        text.Children.Add(new TextBlock
+
+        var nameBlock = new TextBlock
         {
             Text = displayName,
-            FontSize = 14,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
 
             // TextTrimming 只在「量到的宽度比文字窄」时才出省略号。放进横向 StackPanel
             // （主轴上不限宽）时 TextBlock 会按整段文字量宽，永远不触发 —— 截断就只剩硬裁。
             // 所以下面把根节点换成 Auto + Star 的 Grid，让文字列拿到确定的剩余宽度。
             TextTrimming = TextTrimming.CharacterEllipsis,
             TextWrapping = TextWrapping.NoWrap,
-        });
-        text.Children.Add(new TextBlock
+        };
+        ApplyTextStyle(nameBlock, "BodyStrongTextBlockStyle");
+        text.Children.Add(nameBlock);
+
+        var emailBlock = new TextBlock
         {
             Text = session.DisplayEmail,
-            FontSize = 12,
             Opacity = 0.61,
             TextTrimming = TextTrimming.CharacterEllipsis,
             TextWrapping = TextWrapping.NoWrap,
-        });
+        };
+        ApplyTextStyle(emailBlock, "CaptionTextBlockStyle");
+        text.Children.Add(emailBlock);
 
         // 头像 Auto 列、文字 Star 列：文字据此拿到页脚条目的剩余宽度，省略号才会生效。
         // 稿子里这一格是 320×79，头像是 64×64 —— 上下各留 8（合计 16）正好凑出 79。

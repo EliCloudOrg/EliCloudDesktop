@@ -2,6 +2,7 @@ using EliCloud.Sdk;
 using EliCloud.Sdk.Mc;
 using EliCloud.Sdk.Sso;
 using EliCloudDesktop.Core;
+using EliCloudDesktop.Generated;
 
 namespace EliCloudDesktop.Services;
 
@@ -9,34 +10,50 @@ namespace EliCloudDesktop.Services;
 /// EliCloud.Sdk 的唯一入口封装。
 /// </summary>
 /// <remarks>
+/// <para>
 /// 刻意**不使用** SDK 的静态门面 <c>EliCloudService</c>：那里是进程级单例配置，
 /// 一旦用户在设置页改了入口地址就没法干净地换回来（SDK README §2.4 把这条代价写明了）。
 /// 这里改用实例 API（<see cref="SsoClient"/> / <see cref="McClient"/> + <see cref="EliCloudOptions"/>），
 /// 换地址 = 换一个 <see cref="EliCloudGateway"/> 实例。
+/// </para>
+/// <para>
+/// 超时与 UA 来自 <see cref="Contract"/>（即 <c>contracts/validation.md</c> 与
+/// <c>design/build-config.json</c>）：普通 20s、探活 8s、资料 30s、上传 60s；
+/// UA 是 <c>EliCloud/{version} (windows)</c>，不带入口地址。
+/// </para>
 /// </remarks>
 internal sealed class EliCloudGateway
 {
-    /// <summary>探活时单次请求的额外上限（SDK 自身默认 30 秒，对「点开就看状态」来说太长）。</summary>
-    private static readonly TimeSpan ProbeTimeout = TimeSpan.FromSeconds(8);
-
     private readonly HttpClient _http;
 
     /// <summary>用构建时注入的平台入口构造的实例，作为 Context 的兜底默认值。</summary>
     public static readonly EliCloudGateway Default = new(PlatformConfig.BaseAddress);
 
     public EliCloudGateway(string baseAddress)
+        : this(new HttpClient { Timeout = Timeout.InfiniteTimeSpan }, baseAddress)
     {
+    }
+
+    /// <summary>测试用：注入一个假的 <see cref="HttpClient"/>（契约 fixture 回放）。</summary>
+    internal EliCloudGateway(HttpClient http, string baseAddress)
+    {
+        _http = http;
         BaseAddress = baseAddress;
         Options = new EliCloudOptions
         {
             BaseAddress = new Uri(baseAddress, UriKind.Absolute),
             // 只报产品与版本，不带地址/域名 —— UA 会被写进服务端日志。
-            UserAgent = "EliCloudDesktop/0.1",
-            Timeout = TimeSpan.FromSeconds(20),
+            UserAgent = Contract.UserAgent,
+            Timeout = Contract.DefaultTimeout,
         };
 
-        // 超时按请求由 SDK 控制，所以这里不需要 HttpClient 自己的超时（共享一个实例即可）。
-        _http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+        // SDK 目前只把 UserAgent 存进 Options、没有真正发出去；UA 是契约要求，
+        // 这里在共享 HttpClient 的默认头上落实一次（UserInfoApi 的裸 HTTP 也因此带上）。
+        _http.DefaultRequestHeaders.UserAgent.Clear();
+        if (!_http.DefaultRequestHeaders.UserAgent.TryParseAdd(Contract.UserAgent))
+        {
+            throw new InvalidOperationException($"UA 格式不合法：{Contract.UserAgent}");
+        }
     }
 
     /// <summary>当前平台入口地址。</summary>
@@ -137,14 +154,14 @@ internal sealed class EliCloudGateway
         }
 
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(ProbeTimeout);
+        timeout.CancelAfter(Contract.ProbeTimeout);
 
         try
         {
             return descriptor.Id switch
             {
                 "mc" => ToStatus(descriptor.Id, await Mc.GetHealthAsync(timeout.Token).ConfigureAwait(false)),
-                _ => new ServiceStatus(descriptor.Id, ServiceAvailability.Unknown, "尚无探测实现", DateTimeOffset.UtcNow),
+                _ => new ServiceStatus(descriptor.Id, ServiceAvailability.Unknown, null, DateTimeOffset.UtcNow),
             };
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -153,17 +170,19 @@ internal sealed class EliCloudGateway
         }
         catch (OperationCanceledException)
         {
-            return ServiceStatus.Failed(descriptor.Id, $"探测超时（{ProbeTimeout.TotalSeconds:0} 秒）");
+            return ServiceStatus.Failed(descriptor.Id, Copy.Get(CopyKeys.ErrorClientTimeout));
         }
         catch (EliCloudApiException ex)
         {
-            // 只留错误码：它是平台的契约值，不含主机名、路径等部署信息。
-            return ServiceStatus.Failed(descriptor.Id, $"平台返回 {ex.StatusCode} {ex.Error}");
+            // 只留契约里的错误码对应文案：它不含主机名、路径等部署信息。
+            return ServiceStatus.Failed(
+                descriptor.Id,
+                Copy.Get(EliCloudErrorText.KeyFor(ex.Error)));
         }
         catch (Exception)
         {
             // 网络层的异常消息里通常带着主机名与端口，属于我方基础设施信息，一律不落到数据里。
-            return ServiceStatus.Failed(descriptor.Id, "连不上服务器");
+            return ServiceStatus.Failed(descriptor.Id, Copy.Get(CopyKeys.ErrorClientNetworkError));
         }
     }
 
@@ -176,22 +195,11 @@ internal sealed class EliCloudGateway
 
     private static ServiceStatus ToStatus(string serviceId, McHealthStatus health)
     {
-        var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(health.Version)) parts.Add($"服务端 {health.Version}");
-
-        if (health.Rcon is { } rcon)
-        {
-            parts.Add(rcon.Reachable
-                ? $"RCON {rcon.LatencyMs:0.#} ms"
-                : $"RCON 不可达：{rcon.Error ?? "未知原因"}");
-        }
-
-        if (health.WhitelistCount is { } count) parts.Add($"白名单 {count} 人");
-
         // 服务在跑但 RCON 挂了，对用户来说就是「加不了名字」= 不可用；
         // 这恰好是 SDK 特意保留 503 响应体的那个故障模式。
+        // 技术字段（版本、延迟、endpoint、error）不进数据层 —— 界面只说可用/不可用。
         var availability = health.IsHealthy ? ServiceAvailability.Available : ServiceAvailability.Unavailable;
-        return new ServiceStatus(serviceId, availability, string.Join(" · ", parts), DateTimeOffset.UtcNow);
+        return new ServiceStatus(serviceId, availability, null, DateTimeOffset.UtcNow);
     }
 
     // ---------------------------------------------------------------- MC 业务
@@ -207,8 +215,8 @@ internal sealed class EliCloudGateway
     public Task<McNameEntry> AddMcNameAsync(SessionState session, string name, string note, CancellationToken ct) =>
         Mc.AddNameAsync(session.AccessToken!, name, note, ct);
 
-    /// <summary>撤回自己的 MC 白名单条目。</summary>
-    public Task RemoveMcNameAsync(SessionState session, string entryId, CancellationToken ct) =>
+    /// <summary>撤回自己的 MC 白名单条目（幂等：已撤回的再撤一次也成功）。</summary>
+    public Task<McNameEntry> RemoveMcNameAsync(SessionState session, string entryId, CancellationToken ct) =>
         Mc.RemoveNameAsync(session.AccessToken!, entryId, ct);
 
     // ---------------------------------------------------------------- 个人资料
@@ -216,7 +224,7 @@ internal sealed class EliCloudGateway
     /// <summary>读取自己的资料；不存在记录时服务端也返回 200 + null 字段。</summary>
     public async Task<UserProfile> GetMyProfileAsync(SessionState session, CancellationToken ct)
     {
-        using var timeout = LinkedTimeout(ct, TimeSpan.FromSeconds(20));
+        using var timeout = LinkedTimeout(ct, Contract.DefaultTimeout);
         return await UserInfo.GetMyProfileAsync(session.AccessToken!, timeout.Token).ConfigureAwait(false);
     }
 
@@ -226,7 +234,7 @@ internal sealed class EliCloudGateway
         string sub,
         CancellationToken ct)
     {
-        using var timeout = LinkedTimeout(ct, TimeSpan.FromSeconds(20));
+        using var timeout = LinkedTimeout(ct, Contract.DefaultTimeout);
         return await UserInfo.GetProfileAsync(session.AccessToken!, sub, timeout.Token).ConfigureAwait(false);
     }
 
@@ -237,7 +245,7 @@ internal sealed class EliCloudGateway
         string? bio,
         CancellationToken ct)
     {
-        using var timeout = LinkedTimeout(ct, TimeSpan.FromSeconds(30));
+        using var timeout = LinkedTimeout(ct, Contract.ProfileSaveTimeout);
         return await UserInfo
             .UpdateMyProfileAsync(session.AccessToken!, nickname, bio, timeout.Token)
             .ConfigureAwait(false);
@@ -251,7 +259,7 @@ internal sealed class EliCloudGateway
         string contentType,
         CancellationToken ct)
     {
-        using var timeout = LinkedTimeout(ct, TimeSpan.FromSeconds(60));
+        using var timeout = LinkedTimeout(ct, Contract.ImageUploadTimeout);
         return await UserInfo
             .UploadMyImageAsync(session.AccessToken!, kind, bytes, contentType, timeout.Token)
             .ConfigureAwait(false);
@@ -259,7 +267,7 @@ internal sealed class EliCloudGateway
 
     public async Task DeleteMyImageAsync(SessionState session, string kind, CancellationToken ct)
     {
-        using var timeout = LinkedTimeout(ct, TimeSpan.FromSeconds(20));
+        using var timeout = LinkedTimeout(ct, Contract.DefaultTimeout);
         await UserInfo.DeleteMyImageAsync(session.AccessToken!, kind, timeout.Token).ConfigureAwait(false);
     }
 
@@ -268,7 +276,7 @@ internal sealed class EliCloudGateway
         string kind,
         CancellationToken ct)
     {
-        using var timeout = LinkedTimeout(ct, TimeSpan.FromSeconds(20));
+        using var timeout = LinkedTimeout(ct, Contract.DefaultTimeout);
         return await UserInfo.GetMyImageAsync(session.AccessToken!, kind, timeout.Token).ConfigureAwait(false);
     }
 

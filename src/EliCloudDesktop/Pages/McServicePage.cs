@@ -1,7 +1,7 @@
-using System.Text.RegularExpressions;
 using EliCloud.Sdk;
 using EliCloud.Sdk.Mc;
 using EliCloudDesktop.Core;
+using EliCloudDesktop.Generated;
 using EliCloudDesktop.Ui;
 using Microsoft.UI.Reactor;
 using Microsoft.UI.Xaml;
@@ -22,15 +22,8 @@ namespace EliCloudDesktop.Pages;
 /// 页面上只说用户关心的事（能不能用、加了哪些名字、还能加几个），
 /// 不出现端点路径、RCON、版本号这类实现细节。
 /// </remarks>
-internal sealed partial class McServicePage : Component
+internal sealed class McServicePage : Component
 {
-    /// <summary>服务端对 MC 用户名的硬约束：<c>^[A-Za-z0-9_]{3,16}$</c>。</summary>
-    [GeneratedRegex("^[A-Za-z0-9_]{3,16}$")]
-    private static partial Regex MinecraftNamePattern { get; }
-
-    /// <summary>备注在服务端的长度上限（1–200 字符）。</summary>
-    private const int NoteMaxLength = 200;
-
     public override Element Render()
     {
         var state = UseContext(EliCloudContexts.State);
@@ -91,25 +84,29 @@ internal sealed partial class McServicePage : Component
         var quotaExhausted = mine?.Quota is { Limit: > 0, Remaining: <= 0 };
         var canOpenAdd = !submitting && !quotaExhausted;
 
-        // 弹窗里主按钮的可用状态：用户名要过服务端的硬约束，备注不能为空。
+        // 弹窗里主按钮的可用状态：用户名要过服务端的硬约束，备注必须合法。
+        // 判据与 contracts/validation.md §3 共用 Core/Contract.cs 里的同一份实现。
         var canSubmit = !submitting
-            && MinecraftNamePattern.IsMatch(draftName.Trim())
-            && draftNote.Trim().Length is > 0 and <= NoteMaxLength;
+            && Validation.IsValidMinecraftName(draftName)
+            && Validation.IsValidMcNote(draftNote);
 
         return FlexColumn(
             Widgets.PageHeader(
-                "Minecraft 玩家服务器",
-                "绑定用户名以获取准入权限",
+                Copy.Get(CopyKeys.McTitle),
+                Copy.Get(CopyKeys.McDescription),
                 actions: HStack(
                     8,
                     // 提交时弹窗已经关了，这里留一个转圈，免得页面上只剩「按钮变灰」。
                     submitting
-                        ? ProgressRing().Width(16).Height(16).AutomationName("正在添加用户名")
+                        ? ProgressRing().Width(16).Height(16)
+                            .AutomationName(Copy.Get(CopyKeys.McAdding))
                         : null,
-                    Button("添加用户名", OpenAddDialog)
+                    Button(Copy.Get(CopyKeys.McAddOpen), OpenAddDialog)
                         .AccentButton()
-                        .IsEnabled(canOpenAdd),
-                    Button("刷新", () => bumpReload(n => n + 1))),
+                        .IsEnabled(canOpenAdd)
+                        .AutomationName(Copy.Get(CopyKeys.McAddOpen)),
+                    Button(Copy.Get(CopyKeys.CommonRefresh), () => bumpReload(n => n + 1))
+                        .AutomationName(Copy.Get(CopyKeys.CommonRefresh))),
                 actionsAtRight: true),
 
             ScrollView(VStack(
@@ -213,10 +210,10 @@ internal sealed partial class McServicePage : Component
         {
             Widgets.SettingCard(
                 Widgets.GlyphIcon("\uE946"),
-                "服务器",
+                Copy.Get(CopyKeys.McServerTitle),
                 health is null
-                    ? "正在查看…"
-                    : health.IsHealthy ? "运行正常" : "暂时不可用",
+                    ? Copy.Get(CopyKeys.CommonLoading)
+                    : Copy.Get(health.IsHealthy ? CopyKeys.StatusRunning : CopyKeys.StatusDegraded),
                 trailing: loading
                     ? ProgressRing().Width(16).Height(16)
                     : Widgets.StatusBadge(health?.IsHealthy == true
@@ -225,37 +222,45 @@ internal sealed partial class McServicePage : Component
 
             Widgets.SettingCard(
                 Widgets.GlyphIcon("\uE839"),
-                "连接速度",
+                Copy.Get(CopyKeys.McServerLatency),
                 health?.Rcon is not { } rcon
-                    ? "正在查看…"
-                    : rcon.Reachable ? $"延迟 {rcon.LatencyMs ?? 0} 毫秒" : "暂时连不上",
+                    ? Copy.Get(CopyKeys.CommonLoading)
+                    : rcon.Reachable
+                        ? Copy.Format(CopyKeys.McServerLatencyValue, ("milliseconds", (long)(rcon.LatencyMs ?? 0)))
+                        : Copy.Get(CopyKeys.StatusUnreachable),
                 trailing: health?.Rcon is { } status
                     ? Widgets.StatusBadge(status.Reachable ? ServiceAvailability.Available : ServiceAvailability.Unavailable)
                     : null),
 
             Widgets.SettingCard(
                 Widgets.GlyphIcon("\uE716"),
-                "服务器上的白名单",
-                health?.WhitelistCount is { } count ? $"共 {count} 人" : "正在查看…"),
+                Copy.Get(CopyKeys.McWhitelistTitle),
+                health?.WhitelistCount is { } count
+                    ? Copy.Format(CopyKeys.McWhitelistCount, ("count", count))
+                    : Copy.Get(CopyKeys.CommonLoading)),
 
             Widgets.SettingCard(
                 Widgets.GlyphIcon("\uE8FD"),
-                "我的名额",
+                Copy.Get(CopyKeys.McQuotaTitle),
                 mine?.Quota is { } quota
                     ? quota.Remaining > 0
-                        ? $"还能添加 {quota.Remaining} 个（上限 {quota.Limit} 个）"
-                        : $"名额用完了（上限 {quota.Limit} 个）"
-                    : "正在查看…"),
+                        ? Copy.Format(CopyKeys.McQuotaRemaining,
+                            ("remaining", quota.Remaining), ("limit", quota.Limit))
+                        : Copy.Format(CopyKeys.McQuotaExhausted, ("limit", quota.Limit))
+                    : Copy.Get(CopyKeys.CommonLoading)),
         };
 
         var children = new List<Element>
         {
-            Widgets.SectionHeader("服务器状态", "现在的运行情况"),
+            Widgets.SectionHeader(
+                Copy.Get(CopyKeys.McServerStatus),
+                Copy.Get(CopyKeys.McServerStatusDescription)),
         };
 
         if (error is { Length: > 0 })
         {
-            children.Add(InfoBar("读取失败", error).Severity(InfoBarSeverity.Warning));
+            children.Add(InfoBar(Copy.Get(CopyKeys.CommonLoadFailed), error)
+                .Severity(InfoBarSeverity.Warning));
         }
 
         children.Add(VStack(4, [.. cards]));
@@ -277,8 +282,8 @@ internal sealed partial class McServicePage : Component
         if (active.Count == 0)
         {
             rows.Add(DesignTokens.Body(mine is null
-                    ? "正在读取…"
-                    : "还没有添加用户名。点右上角的「添加用户名」就能加一个。")
+                    ? Copy.Get(CopyKeys.McNamesLoading)
+                    : Copy.Get(CopyKeys.McNamesEmpty))
                 .Foreground(Theme.SecondaryText)
                 .TextWrapping());
         }
@@ -287,37 +292,48 @@ internal sealed partial class McServicePage : Component
             foreach (var entry in active)
             {
                 var parts = new List<string>();
-                if (entry.CreatedAt is { Length: > 0 } created) parts.Add($"添加于 {created}");
+                if (entry.CreatedAt is { Length: > 0 } created)
+                {
+                    parts.Add(Copy.Format(CopyKeys.McNamesAddedAt, ("created", created)));
+                }
+
                 if (entry.Note is { Length: > 0 } note) parts.Add(note);
+
+                var displayName = entry.NameDisplay ?? entry.Name ?? Copy.Get(CopyKeys.McNamesNameless);
+                var removeLabel = Copy.Get(CopyKeys.McNamesRemove);
 
                 rows.Add(Widgets.SettingCard(
                     Widgets.ServiceIcon(ServiceCatalog.Minecraft.IconUri),
-                    entry.NameDisplay ?? entry.Name ?? "（没有名字）",
+                    displayName,
                     string.Join(" · ", parts),
                     trailing: removingId == entry.Id
                         ? ProgressRing().Width(16).Height(16)
-                        : Button("撤回", () => onRemove(entry.Id))
+                        : Button(removeLabel, () => onRemove(entry.Id))
                             .IsEnabled(removingId is null)
-                            .AutomationName($"撤回 {entry.Name}")));
+                            .AutomationName(Copy.Format(CopyKeys.McNamesRemoveNamed, ("name", displayName)))));
             }
         }
 
         var children = new List<Element>
         {
-            Widgets.SectionHeader("我的白名单", "撤回后就不能进服务器了"),
+            Widgets.SectionHeader(
+                Copy.Get(CopyKeys.McNamesTitle),
+                Copy.Get(CopyKeys.McNamesRemoveHint)),
         };
 
         // 提交失败的提示放在列表旁边：弹窗已经关了，用户需要知道刚才那一下没成，
         // 以及再打开弹窗时输入还在（draft 不清空）。
         if (addError is { Length: > 0 })
         {
-            children.Add(InfoBar("添加失败", addError).Severity(InfoBarSeverity.Error));
+            children.Add(InfoBar(Copy.Get(CopyKeys.McAddFailed), addError)
+                .Severity(InfoBarSeverity.Error));
         }
 
         // 添加按钮被禁用时，这里得说清楚为什么 —— 禁用的按钮收不到 tooltip。
         if (mine?.Quota is { Limit: > 0, Remaining: <= 0 } full)
         {
-            children.Add(DesignTokens.Hint($"名额已经用完了（上限 {full.Limit} 个），要加新名字得先撤回一个。"));
+            children.Add(DesignTokens.Hint(
+                Copy.Format(CopyKeys.McQuotaExceededDetail, ("limit", full.Limit))));
         }
 
         children.Add(VStack(4, [.. rows]));
@@ -347,25 +363,32 @@ internal sealed partial class McServicePage : Component
         var fields = new List<Element>
         {
             DesignTokens.Field(
-                TextBox(draftName, setDraftName, placeholderText: "游戏里用的名字").Header("用户名"),
-                "只能用字母、数字和下划线，3 到 16 位"),
+                TextBox(
+                        draftName,
+                        setDraftName,
+                        placeholderText: Copy.Get(CopyKeys.McAddNamePlaceholder))
+                    .Header(Copy.Get(CopyKeys.McAddNameLabel)),
+                Copy.Get(CopyKeys.McAddNameHint)),
 
             DesignTokens.Field(
-                TextBox(draftNote, setDraftNote, placeholderText: "写给管理员看的说明")
-                    .Header("备注")
-                    .MaxLength(NoteMaxLength),
-                $"写清楚为什么需要这个名额，最多 {NoteMaxLength} 字"),
+                TextBox(
+                        draftNote,
+                        setDraftNote,
+                        placeholderText: Copy.Get(CopyKeys.McAddNotePlaceholder))
+                    .Header(Copy.Get(CopyKeys.McAddNoteLabel))
+                    .MaxLength(Contract.McNoteMaxChars),
+                Copy.Format(CopyKeys.McAddNoteHint, ("maxLength", Contract.McNoteMaxChars))),
         };
 
         ContentDialog? native = null;
 
         return (ContentDialog(
-            "添加用户名",
+            Copy.Get(CopyKeys.McAddTitle),
             VStack(12, [.. fields]).Width(420),
-            primaryButtonText: "添加") with
+            primaryButtonText: Copy.Get(CopyKeys.McAddSubmit)) with
         {
             IsOpen = isOpen,
-            CloseButtonText = "取消",
+            CloseButtonText = Copy.Get(CopyKeys.CommonCancel),
             DefaultButton = ContentDialogButton.Primary,
             IsPrimaryButtonEnabled = canSubmit,
             // 弹窗在 XamlRoot 浮层上，不继承页面主题；必须等它打开之后再写给原生控件
