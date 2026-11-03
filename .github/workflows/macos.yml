@@ -13,6 +13,10 @@ on:
   push:
     paths:
       - "clients/macos/**"
+      - "design/**"
+      - "tools/**"
+      - "contracts/**"
+      - "sdks/swift/**"
       - ".github/workflows/macos.yml"
   workflow_dispatch:
 
