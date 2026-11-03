@@ -140,13 +140,14 @@ extension EliCloudError {
         if let clientError = error as? ClientError {
             return normalized(clientError.underlyingError)
         }
-        if let runtimeError = error as? RuntimeError {
-            return EliCloudError(
-                kind: .decoding,
-                underlying: String(describing: runtimeError)
-            )
+        if error is CancellationError {
+            return EliCloudError(kind: .cancelled)
         }
-        return fromTransport(error)
+        if let urlError = error as? URLError {
+            return fromTransport(urlError)
+        }
+        // 剩下的基本是生成器内部的编码/解码失败（端点是 `internal`，按文字归到 decoding）。
+        return EliCloudError(kind: .decoding, underlying: String(describing: error))
     }
 
     private struct Envelope: Decodable {
