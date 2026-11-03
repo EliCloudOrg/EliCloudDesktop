@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Stage 2 的 Windows hello-world：不引入 WinUI，只验证四端共享生成物能被 C# 工程消费。
+    真正的 WinUI 工程仍是 src/EliCloudDesktop；Stage 3 再把它接到同一套生成物上。
+
+    构建前先跑（见 clients/windows/README.md）：
+        python tools/gen-tokens/gen_tokens.py
+        python tools/gen-copy/gen_copy.py
+        python tools/gen-build-config/gen_build_config.py（参数见 README）
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>EliCloud.Hello</RootNamespace>
+    <AssemblyName>EliCloud.Hello</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Strings\zh-CN\Resources.resw" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

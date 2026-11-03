@@ -1,0 +1,13 @@
+[project]
+name = "elicloud-hello"
+version = "0.1.0"
+description = "Stage 2 Linux hello-world：验证 tokens / copy / build-config 能被 GTK4 端消费。"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+
+[build-system]
+requires = ["meson-python>=0.16"]
+build-backend = "mesonpy"
+
+[tool.unittest]
+start-directory = "tests"
