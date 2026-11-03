@@ -1,0 +1,122 @@
+name: macos
+
+on:
+  pull_request:
+    paths:
+      - "clients/macos/**"
+      - "sdks/swift/**"
+      - "tools/gen-swift-sdk/**"
+      - "design/**"
+      - "tools/**"
+      - "contracts/**"
+      - ".github/workflows/macos.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: "utf-8"
+  XCODEGEN_VERSION: "2.44.1"
+  XCODE_VERSION: "16.4"
+  ELICLOUD_BASE_URL_PROD: "https://api.example.com"
+
+jobs:
+  sdk:
+    name: Swift SDK（契约生成 + 测试）
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.0"
+
+      - name: Install pinned Python deps
+        run: python -m pip install --disable-pip-version-check pyyaml==6.0.2
+
+      - name: Pin Xcode
+        run: |
+          sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app"
+          swift --version
+
+      # 契约是唯一协议源：改了 contracts/openapi.yaml 却没重新生成 → 这一步失败。
+      # 生成器版本 pin 在 tools/gen-swift-sdk/gen_swift_sdk.py，与 sdks/swift/Package.swift
+      # 的 swift-openapi-runtime 同版本线。
+      - name: Swift SDK codegen drift check
+        run: python tools/gen-swift-sdk/gen_swift_sdk.py --check --runner native
+
+      - name: Swift SDK unit + contract tests
+        working-directory: sdks/swift
+        run: |
+          mkdir -p ../../artifacts
+          swift test 2>&1 | tee ../../artifacts/swift-test.log
+
+      - name: Upload Swift SDK logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swift-sdk-logs
+          path: artifacts/swift-test.log
+          if-no-files-found: ignore
+
+  build:
+    name: SwiftUI hello-world
+    runs-on: macos-15
+    needs: sdk
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.0"
+
+      - name: Pin Xcode
+        run: |
+          sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app"
+          xcodebuild -version
+
+      - name: Install pinned XcodeGen
+        run: |
+          curl -fsSL -o xcodegen.zip \
+            "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          unzip -q xcodegen.zip
+          sudo install -m 0755 xcodegen/bin/xcodegen /usr/local/bin/xcodegen
+          xcodegen --version
+
+      - name: Generate shared assets
+        run: |
+          python tools/gen-tokens/gen_tokens.py --check
+          python tools/gen-copy/gen_copy.py --check
+          python tools/gen-build-config/gen_build_config.py --environment prod --platform macos
+
+      - name: Generate Xcode project
+        working-directory: clients/macos
+        run: xcodegen generate
+
+      - name: Build + test
+        run: |
+          mkdir -p artifacts
+          xcodebuild test \
+            -project clients/macos/EliCloudHello.xcodeproj \
+            -scheme EliCloudHello \
+            -destination "platform=macOS" \
+            -derivedDataPath clients/macos/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            | tee artifacts/xcodebuild.log
+
+      - name: Upload logs / screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-logs
+          path: |
+            artifacts/**
+            clients/macos/DerivedData/Logs/**
+          if-no-files-found: ignore

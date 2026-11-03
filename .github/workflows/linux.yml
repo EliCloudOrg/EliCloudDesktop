@@ -1,0 +1,73 @@
+name: linux
+
+on:
+  pull_request:
+    paths:
+      - "clients/linux/**"
+      - "design/**"
+      - "tools/**"
+      - "contracts/**"
+      - ".github/workflows/linux.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: "utf-8"
+  ELICLOUD_BASE_URL_PROD: "https://api.example.com"
+
+jobs:
+  build:
+    name: GTK4 hello-world
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pinned toolchain (Ubuntu 24.04)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-4-dev libadwaita-1-dev meson ninja-build \
+            python3 python3-gi gir1.2-gtk-4.0 gir1.2-adw-1
+
+      - name: Generate shared assets
+        run: |
+          python3 tools/gen-tokens/gen_tokens.py --check
+          python3 tools/gen-copy/gen_copy.py --check
+          python3 tools/gen-build-config/gen_build_config.py --environment prod --platform linux
+
+      - name: Configure
+        working-directory: clients/linux
+        run: meson setup build --prefix=/usr
+
+      - name: Build (byte-compile all installed sources)
+        working-directory: clients/linux
+        run: meson compile -C build
+
+      - name: Test generated artifacts
+        working-directory: clients/linux
+        run: meson test -C build --print-errorlogs
+
+      - name: Smoke-launch under Xvfb (best effort, no display required to build)
+        working-directory: clients/linux
+        run: |
+          if command -v xvfb-run >/dev/null 2>&1; then
+            PYTHONPATH=src xvfb-run -a timeout 10 python3 -c "import elicloud.hello; print('import ok')"
+          else
+            echo "xvfb-run not installed; skipping GUI smoke"
+          fi
+
+      - name: Upload meson logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-logs
+          path: |
+            clients/linux/build/meson-logs/**
+          if-no-files-found: ignore

@@ -1,0 +1,70 @@
+name: contracts
+
+on:
+  pull_request:
+    paths:
+      - "contracts/**"
+      - "tools/gen-copy/**"
+      - "tools/contract-runner/**"
+      - "design/generated/copy-keys.json"
+      - ".github/workflows/contracts.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contracts-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUTF8: "1"
+
+jobs:
+  lint:
+    name: OpenAPI / fixtures / copy 覆盖
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.0"
+
+      - name: Install pinned Python deps
+        run: python -m pip install --disable-pip-version-check pyyaml==6.0.2
+
+      - name: Contract self-check
+        run: python contracts/tools/lint_contract.py
+
+      - name: Copy generator is up to date and covers every key
+        run: python tools/gen-copy/gen_copy.py --check
+
+      - name: Fixtures are structurally complete
+        run: python tools/contract-runner/run.py --list
+
+      - name: Replay key fixtures over HTTP
+        run: python tools/contract-runner/run.py --http-smoke
+
+  csharp:
+    name: C# 契约测试
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.401"
+
+      - name: Run contract tests
+        run: dotnet run --project contracts/tests/csharp/EliCloud.ContractTests.csproj -v:q
+
+      - name: Upload contract test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contracts-csharp-logs
+          path: |
+            contracts/tests/csharp/**/*.log
+            contracts/**/*.trx
+          if-no-files-found: ignore

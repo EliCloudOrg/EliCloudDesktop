@@ -61,11 +61,54 @@ class PinTests(unittest.TestCase):
 
     def test_generation_script_uses_work_and_cache_roots(self) -> None:
         script = tool.generation_script()
-        for token in ("$WORK/contracts/openapi.yaml", "$CACHE_ROOT", "$OUTPUT_REL"):
+        for token in ("$CACHE_ROOT", "$OUTPUT_REL", tool.DERIVED_INPUT_NAME):
             self.assertIn(token, script)
         self.assertIn("--config", script)
         # swift-openapi-generator 的文档路径是位置参数；`--input` 不存在（会 exit 64）。
         self.assertNotIn("--input", script)
+
+
+class DerivedInputTests(unittest.TestCase):
+    """可空 union 降级：只动 oneOf/anyOf 里的 null 分支，其它原样保留。"""
+
+    def test_nullable_ref_is_downgraded_but_description_kept(self) -> None:
+        node = {"description": "头像", "oneOf": [{"$ref": "#/x"}, {"type": "null"}]}
+        self.assertEqual(tool._downgrade_nullable_unions(node), 1)
+        self.assertEqual(node, {"description": "头像", "$ref": "#/x"})
+
+    def test_scalar_null_union_is_not_touched(self) -> None:
+        node = {"type": ["string", "null"]}
+        self.assertEqual(tool._downgrade_nullable_unions(node), 0)
+        self.assertEqual(node, {"type": ["string", "null"]})
+
+    def test_multi_branch_union_is_not_touched(self) -> None:
+        node = {"oneOf": [{"$ref": "#/a"}, {"$ref": "#/b"}, {"type": "null"}]}
+        self.assertEqual(tool._downgrade_nullable_unions(node), 0)
+        self.assertEqual(len(node["oneOf"]), 3)
+
+    def test_derive_writes_deterministic_yaml(self) -> None:
+        source = """openapi: 3.1.0
+components:
+  schemas:
+    Profile:
+      type: object
+      properties:
+        avatar:
+          description: 头像
+          oneOf:
+            - $ref: '#/components/schemas/Image'
+            - type: 'null'
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "openapi.yaml"
+            dst = Path(tmp) / "derived.yaml"
+            src.write_text(source, encoding="utf-8")
+            self.assertEqual(tool.derive_generator_input(src, dst), 1)
+            first = dst.read_text(encoding="utf-8")
+            self.assertIn("$ref: '#/components/schemas/Image'", first)
+            self.assertNotIn("null", first)
+            tool.derive_generator_input(src, dst)
+            self.assertEqual(dst.read_text(encoding="utf-8"), first)
 
 
 if __name__ == "__main__":

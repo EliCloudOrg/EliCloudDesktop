@@ -1,0 +1,92 @@
+name: windows
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "clients/windows/**"
+      - "tests/**"
+      - "contracts/**"
+      - "design/**"
+      - "tools/**"
+      - "*.slnx"
+      - "global.json"
+      - ".github/workflows/windows.yml"
+  workflow_dispatch:
+    inputs:
+      build_msix:
+        description: "额外构建已签名 .msixpkg（需要 MsixDevCertPassword secret）"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: "utf-8"
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  # 构建时注入的占位地址；真实发布由 secrets 覆盖，仓库里不存真实入口。
+  ELICLOUD_BASE_URL_PROD: "https://api.example.com"
+
+jobs:
+  build:
+    name: WinUI 3 基线 + hello-world
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.401"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.0"
+
+      - name: Generate shared assets
+        run: |
+          python tools/gen-tokens/gen_tokens.py --check
+          python tools/gen-copy/gen_copy.py --check
+          python tools/gen-build-config/gen_build_config.py --environment prod --platform windows
+
+      - name: Restore
+        run: dotnet restore EliCloudDesktop.slnx -p:Platform=x64
+
+      - name: Build WinUI baseline (Debug)
+        run: dotnet build EliCloudDesktop.slnx -c Debug -p:Platform=x64 --no-restore -v:m
+
+      - name: Official-style audit (windows)
+        run: python tools/audit-official-styles/audit.py --platform windows
+
+      - name: Unit + contract replay tests (xUnit)
+        run: dotnet test tests/EliCloudDesktop.Tests/EliCloudDesktop.Tests.csproj -c Release --no-restore -v:m
+
+      - name: Build + run Windows hello-world
+        run: |
+          dotnet build clients/windows/hello/EliCloud.Hello.csproj -c Release -v:m
+          dotnet run --project clients/windows/hello/EliCloud.Hello.csproj -c Release --no-build
+
+      - name: Build signed .msixpkg (manual only)
+        if: github.event_name == 'workflow_dispatch' && inputs.build_msix
+        env:
+          MSIXPKG_DEV_CERT_PASSWORD: ${{ secrets.MSIXPKG_DEV_CERT_PASSWORD }}
+        run: |
+          dotnet restore EliCloudDesktop.slnx -p:Platform=x64
+          dotnet build EliCloudDesktop.slnx -c Release -p:Platform=x64 --no-restore -v:m
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-logs
+          path: |
+            **/*.binlog
+            artifacts/**
+            src/EliCloudDesktop/AppPackages/**
+          if-no-files-found: ignore

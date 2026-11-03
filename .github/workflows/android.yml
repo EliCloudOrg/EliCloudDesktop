@@ -1,0 +1,66 @@
+name: android
+
+on:
+  pull_request:
+    paths:
+      - "clients/android/**"
+      - "design/**"
+      - "tools/**"
+      - "contracts/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: "utf-8"
+  JAVA_VERSION: "21.0.5+11"
+  GRADLE_VERSION: "8.13"
+  ELICLOUD_BASE_URL_PROD: "https://api.example.com"
+
+jobs:
+  build:
+    name: Compose hello-world
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21.0.5+11"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.0"
+
+      - name: Set up Gradle (pinned)
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Generate shared assets
+        run: |
+          python tools/gen-tokens/gen_tokens.py --check
+          python tools/gen-copy/gen_copy.py --check
+          python tools/gen-build-config/gen_build_config.py --environment prod --platform android
+
+      - name: Build + unit tests
+        working-directory: clients/android
+        run: gradle --no-daemon --stacktrace assembleDebug testDebugUnitTest
+
+      - name: Upload APK / logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-logs
+          path: |
+            clients/android/app/build/reports/**
+            clients/android/app/build/outputs/logs/**
+          if-no-files-found: ignore

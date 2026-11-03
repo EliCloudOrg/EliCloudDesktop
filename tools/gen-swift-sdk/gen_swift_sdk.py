@@ -37,11 +37,19 @@ import subprocess
 import sys
 from pathlib import Path
 
+try:
+    import yaml
+except ImportError:  # pragma: no cover - 环境问题
+    yaml = None
+
 ROOT = Path(__file__).resolve().parents[2]
 OPENAPI = ROOT / "contracts" / "openapi.yaml"
 CONFIG = ROOT / "tools" / "gen-swift-sdk" / "openapi-generator-config.yaml"
 OUTPUT = ROOT / "sdks" / "swift" / "Sources" / "EliCloudSDK" / "Generated"
 CACHE = ROOT / ".local" / "gen-swift-sdk"
+
+# 生成器输入 = 契约的“Swift 视图”，写在缓存目录里（不入库、不影响契约本身）。
+DERIVED_INPUT_NAME = "openapi.swift.yaml"
 
 # 版本 pin：生成器、运行时包、Swift 工具链三者对齐，避免 CI 漂移。
 #   - 生成器 tag 必须等于 Package.swift 里 swift-openapi-runtime 的版本线；
@@ -73,7 +81,7 @@ swift run --package-path "$generator" --scratch-path "$CACHE_ROOT/.build-$GENERA
   --config "$WORK/tools/gen-swift-sdk/openapi-generator-config.yaml" \\
   --diagnostics-output-path "$CACHE_ROOT/diagnostics.yaml" \\
   --output-directory "$WORK/$OUTPUT_REL" \\
-  "$WORK/contracts/openapi.yaml"
+  "$CACHE_ROOT/{derived_input}"
 """
 
 
@@ -96,7 +104,68 @@ def to_docker_path(path: Path) -> str:
 
 
 def generation_script() -> str:
-    return GENERATION_SCRIPT.format(repo=GENERATOR_REPO)
+    return GENERATION_SCRIPT.format(repo=GENERATOR_REPO, derived_input=DERIVED_INPUT_NAME)
+
+
+def _is_null_schema(branch: object) -> bool:
+    if not isinstance(branch, dict):
+        return False
+    schema_type = branch.get("type")
+    if schema_type == "null":
+        return True
+    return isinstance(schema_type, list) and bool(schema_type) and set(schema_type) == {"null"}
+
+
+def _downgrade_nullable_unions(node: object) -> int:
+    """把 `oneOf/anyOf: [X, {type: 'null'}]` 就地换成 `X`，返回改动次数。
+
+    只处理“恰好一个非 null 分支”的情形；其它形态原样保留（宁可让生成器报错，
+    也不要悄悄改变契约语义）。
+    """
+    if isinstance(node, list):
+        return sum(_downgrade_nullable_unions(item) for item in node)
+    if not isinstance(node, dict):
+        return 0
+    count = 0
+    for key in list(node.keys()):
+        child = node[key]
+        if key in ("oneOf", "anyOf") and isinstance(child, list):
+            non_null = [branch for branch in child if not _is_null_schema(branch)]
+            if len(non_null) == 1 and len(non_null) != len(child) and isinstance(non_null[0], dict):
+                siblings = {k: v for k, v in node.items() if k != key}
+                node.clear()
+                node.update(siblings)
+                node.update(non_null[0])
+                count += 1
+                continue
+        count += _downgrade_nullable_unions(child)
+    return count
+
+
+def derive_generator_input(source: Path, destination: Path) -> int:
+    """写生成器输入：契约原文 + 可空 union 降级（仅影响 Swift 生成器）。
+
+    为什么需要：
+      - 契约里 `avatar` / `banner` / `rcon` / `quota` / `user` 用
+        `oneOf: [$ref, {type: 'null'}]` 表达“对象或 null”，这是 OAS 3.1 的正确写法，
+        fixtures 里也确实出现显式 null；
+      - 但 `apple/swift-openapi-generator` 1.9.0 把 `.null` 视为不支持的 schema
+        （`case .not, .null: return .unsupported`），会**把整个字段静默跳过**；
+      - 这些字段都不在 `required` 里，生成器对可选属性本来就会出 `T?`，
+        所以把 union 降级为单个 `$ref` 之后，Swift 侧类型与解码行为完全一致
+        （null → nil），而契约本身**一个字都不改**。
+    """
+    if yaml is None:
+        raise ToolError("需要 pyyaml：python -m pip install --disable-pip-version-check pyyaml==6.0.2")
+    document = yaml.safe_load(source.read_text(encoding="utf-8"))
+    if not isinstance(document, dict):
+        raise ToolError(f"{source} 顶层不是对象")
+    rewrites = _downgrade_nullable_unions(document)
+    destination.write_text(
+        yaml.safe_dump(document, allow_unicode=True, sort_keys=False, width=4096),
+        encoding="utf-8",
+    )
+    return rewrites
 
 
 def ensure_docker_image() -> None:
@@ -293,6 +362,12 @@ def main(argv: list[str] | None = None) -> int:
     if not OPENAPI.is_file():
         print(f"找不到契约：{OPENAPI}", file=sys.stderr)
         return 2
+
+    rewrites = derive_generator_input(OPENAPI, CACHE / DERIVED_INPUT_NAME)
+    log(
+        f"生成器输入：.local/gen-swift-sdk/{DERIVED_INPUT_NAME}"
+        f"（可空 union 降级 {rewrites} 处；契约本身未改动）"
+    )
 
     if args.check:
         return check(runner, insecure_git=args.insecure_git)
