@@ -160,6 +160,21 @@ public struct UserInfoClient: Sendable {
             return ProfileImage(data: try await EliCloudTransport.collect(httpBody), contentType: "image/webp", etag: etag)
         }
     }
+
+    /// 公开图片端点是另一个生成的 Body 枚举（内容类型相同），单独适配一次。
+    private static func profileImage(
+        from body: Operations.GetProfileImage.Output.Ok.Body,
+        etag: String?
+    ) async throws -> ProfileImage {
+        switch body {
+        case .png(let httpBody):
+            return ProfileImage(data: try await EliCloudTransport.collect(httpBody), contentType: "image/png", etag: etag)
+        case .jpeg(let httpBody):
+            return ProfileImage(data: try await EliCloudTransport.collect(httpBody), contentType: "image/jpeg", etag: etag)
+        case .imageWebp(let httpBody):
+            return ProfileImage(data: try await EliCloudTransport.collect(httpBody), contentType: "image/webp", etag: etag)
+        }
+    }
 }
 
 extension Components.Parameters.ProfileKind {
