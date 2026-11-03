@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "appVersion": "0.1.0",
+  "contractVersion": "1.0.0",
+  "userAgent": "EliCloud/{version} ({platform})",
+  "note": "入口地址只来自构建参数或 CI secrets；本文件不存真实地址，生成物也不入库。",
+  "environments": {
+    "local": {
+      "baseUrl": {
+        "env": "ELICLOUD_BASE_URL_LOCAL",
+        "default": "http://127.0.0.1:8080"
+      },
+      "requireHttps": false
+    },
+    "prod": {
+      "baseUrl": {
+        "env": "ELICLOUD_BASE_URL_PROD"
+      },
+      "requireHttps": true
+    }
+  },
+  "platforms": {
+    "windows": {
+      "name": "windows",
+      "output": "clients/windows/hello/Generated/BuildConfig.g.cs"
+    },
+    "macos": {
+      "name": "macos",
+      "output": "clients/macos/Generated/BuildConfig.swift"
+    },
+    "android": {
+      "name": "android",
+      "output": "clients/android/build-config.properties"
+    },
+    "linux": {
+      "name": "linux",
+      "output": "clients/linux/src/elicloud/config.py"
+    }
+  }
+}

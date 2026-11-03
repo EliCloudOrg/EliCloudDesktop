@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "contractVersion": "1.0.0",
+  "locale": "zh-CN",
+  "placeholders": {
+    "count": { "type": "integer", "description": "数量" },
+    "email": { "type": "string", "description": "邮箱" }
+  },
+  "strings": {
+    "app.title": "EliCloud Desktop",
+    "login.usernameOrEmail.label": "用户名或邮箱",
+    "home.hero.description": "欢迎来到EliCloud！",
+    "verify.sent": "我们已向 {email} 发送了一封验证邮件。",
+    "mc.whitelist.count": "共 {count} 人",
+    "error.transport.rate_limited": "试得有点频繁，等 {count} 秒再试。"
+  }
+}

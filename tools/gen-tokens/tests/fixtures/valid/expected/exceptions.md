@@ -1,0 +1,19 @@
+| 语义键 | 平台 | 值 | 理由 | 批准人 | 作用域 |
+|---|---|---|---|---|---|
+| `space.4` | windows | `16` | 快照样本：没有官方间距令牌 | tester | `test.spacing` |
+| `space.4` | macos | `16` | 快照样本：没有官方间距令牌 | tester | `test.spacing` |
+| `space.4` | android | `16` | 快照样本：没有官方间距令牌 | tester | `test.spacing` |
+| `space.4` | linux | `16` | 快照样本：没有官方间距令牌 | tester | `test.spacing` |
+| `radius.control` | macos | `10` | 快照样本 | tester | `test.radius` |
+| `radius.control` | linux | `6` | 快照样本 | tester | `test.radius` |
+| `motion.fast` | macos | `200` | 快照样本 | tester | `test.motion` |
+| `motion.fast` | android | `150` | 快照样本 | tester | `test.motion` |
+| `motion.fast` | linux | `150` | 快照样本 | tester | `test.motion` |
+| `density.row` | windows | `40` | 快照样本 | tester | `test.density` |
+| `density.row` | macos | `40` | 快照样本 | tester | `test.density` |
+| `density.row` | android | `40` | 快照样本 | tester | `test.density` |
+| `density.row` | linux | `40` | 快照样本 | tester | `test.density` |
+| `brand.hero.scrim` | windows | `#80000000` | 快照样本：品牌压暗层 | tester | `home.hero` |
+| `brand.hero.scrim` | macos | `#80000000` | 快照样本：品牌压暗层 | tester | `home.hero` |
+| `brand.hero.scrim` | android | `#80000000` | 快照样本：品牌压暗层 | tester | `home.hero` |
+| `brand.hero.scrim` | linux | `#80000000` | 快照样本：品牌压暗层 | tester | `home.hero` |

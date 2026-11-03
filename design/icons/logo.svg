@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="EliCloud">
+  <title>EliCloud</title>
+  <desc>EliCloud 品牌云朵（Stage 2 草案；待 design-owner 确认后替换为正式矢量稿）。</desc>
+  <g fill="#005FB8">
+    <circle cx="92" cy="152" r="42"/>
+    <circle cx="140" cy="124" r="54"/>
+    <circle cx="188" cy="156" r="36"/>
+    <rect x="92" y="152" width="96" height="42" rx="21"/>
+  </g>
+</svg>

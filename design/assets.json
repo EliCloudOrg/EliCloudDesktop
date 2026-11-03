@@ -1,0 +1,254 @@
+{
+  "version": 1,
+  "note": "资产清单：源文件、各端输出规格、许可与状态。导出脚本 tools/export-assets.py 读取本文件。",
+  "assets": [
+    {
+      "id": "brand.logo",
+      "description": "EliCloud 品牌云朵（草案）",
+      "source": "design/icons/logo.svg",
+      "rasterFallback": "src/EliCloudDesktop/Assets/Images/elicloud-app-icon-cloud.png",
+      "license": "proprietary (EliCloud)",
+      "status": "draft",
+      "approvedBy": "design-owner-pending",
+      "outputs": [
+        {
+          "platform": "windows",
+          "format": "ico",
+          "path": "windows/EliCloud.ico",
+          "sizes": [
+            16,
+            24,
+            32,
+            48,
+            256
+          ]
+        },
+        {
+          "platform": "windows",
+          "format": "png",
+          "path": "windows/EliCloud-{size}.png",
+          "sizes": [
+            44,
+            150,
+            310
+          ]
+        },
+        {
+          "platform": "macos",
+          "format": "png",
+          "path": "macos/EliCloud-{size}.png",
+          "sizes": [
+            1024
+          ]
+        },
+        {
+          "platform": "android",
+          "format": "png",
+          "path": "android/ic_launcher_foreground-{size}.png",
+          "sizes": [
+            432
+          ]
+        },
+        {
+          "platform": "linux",
+          "format": "svg",
+          "path": "linux/elicloud-logo.svg",
+          "sizes": []
+        }
+      ]
+    },
+    {
+      "id": "brand.hero",
+      "description": "主页 Hero 横幅（现有 3840×2160 设计稿导出）",
+      "source": "src/EliCloudDesktop/Assets/Images/home-hero-banner-christmas-pink.jpg",
+      "license": "proprietary (EliCloud)",
+      "status": "approved",
+      "approvedBy": "design-owner",
+      "outputs": [
+        {
+          "platform": "windows",
+          "format": "jpg",
+          "path": "windows/home-hero-{size}.jpg",
+          "sizes": [
+            1600
+          ]
+        },
+        {
+          "platform": "macos",
+          "format": "png",
+          "path": "macos/home-hero-{size}.png",
+          "sizes": [
+            1600
+          ]
+        },
+        {
+          "platform": "android",
+          "format": "webp",
+          "path": "android/home-hero-{size}.webp",
+          "sizes": [
+            1080
+          ]
+        },
+        {
+          "platform": "linux",
+          "format": "png",
+          "path": "linux/home-hero-{size}.png",
+          "sizes": [
+            1600
+          ]
+        }
+      ]
+    },
+    {
+      "id": "service.minecraft",
+      "description": "Minecraft 服务图标",
+      "source": "src/EliCloudDesktop/Assets/Images/service-icon-minecraft-block.png",
+      "license": "proprietary (EliCloud)",
+      "status": "approved",
+      "approvedBy": "design-owner",
+      "outputs": [
+        {
+          "platform": "windows",
+          "format": "png",
+          "path": "windows/service-minecraft-{size}.png",
+          "sizes": [
+            16,
+            20,
+            24,
+            32,
+            48,
+            64
+          ]
+        },
+        {
+          "platform": "macos",
+          "format": "png",
+          "path": "macos/service-minecraft-{size}.png",
+          "sizes": [
+            16,
+            32,
+            64
+          ]
+        },
+        {
+          "platform": "android",
+          "format": "png",
+          "path": "android/service-minecraft-{size}.png",
+          "sizes": [
+            24,
+            48,
+            96
+          ]
+        },
+        {
+          "platform": "linux",
+          "format": "png",
+          "path": "linux/service-minecraft-{size}.png",
+          "sizes": [
+            16,
+            32,
+            64
+          ]
+        }
+      ]
+    },
+    {
+      "id": "service.pdf",
+      "description": "PDF 在线解密服务图标",
+      "source": "src/EliCloudDesktop/Assets/Images/service-icon-pdf-lock.png",
+      "license": "proprietary (EliCloud)",
+      "status": "approved",
+      "approvedBy": "design-owner",
+      "outputs": [
+        {
+          "platform": "windows",
+          "format": "png",
+          "path": "windows/service-pdf-{size}.png",
+          "sizes": [
+            16,
+            20,
+            24,
+            32,
+            48,
+            64
+          ]
+        },
+        {
+          "platform": "macos",
+          "format": "png",
+          "path": "macos/service-pdf-{size}.png",
+          "sizes": [
+            16,
+            32,
+            64
+          ]
+        },
+        {
+          "platform": "android",
+          "format": "png",
+          "path": "android/service-pdf-{size}.png",
+          "sizes": [
+            24,
+            48
+          ]
+        },
+        {
+          "platform": "linux",
+          "format": "png",
+          "path": "linux/service-pdf-{size}.png",
+          "sizes": [
+            16,
+            32,
+            64
+          ]
+        }
+      ]
+    },
+    {
+      "id": "user.avatar.default",
+      "description": "默认头像",
+      "source": "src/EliCloudDesktop/Assets/Images/user-avatar-default.png",
+      "license": "proprietary (EliCloud)",
+      "status": "approved",
+      "approvedBy": "design-owner",
+      "outputs": [
+        {
+          "platform": "windows",
+          "format": "png",
+          "path": "windows/avatar-default-{size}.png",
+          "sizes": [
+            64,
+            128
+          ]
+        },
+        {
+          "platform": "macos",
+          "format": "png",
+          "path": "macos/avatar-default-{size}.png",
+          "sizes": [
+            64,
+            128
+          ]
+        },
+        {
+          "platform": "android",
+          "format": "png",
+          "path": "android/avatar-default-{size}.png",
+          "sizes": [
+            64,
+            128
+          ]
+        },
+        {
+          "platform": "linux",
+          "format": "png",
+          "path": "linux/avatar-default-{size}.png",
+          "sizes": [
+            64,
+            128
+          ]
+        }
+      ]
+    }
+  ]
+}

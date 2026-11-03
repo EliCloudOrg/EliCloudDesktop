@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "source": "contracts/copy/zh-CN.json",
+  "note": "语义 key → 各端资源名；Android 资源名由生成器确定性转换，其它端直接用语义 key。",
+  "keys": {
+    "app.title": {
+      "resw": "app.title",
+      "strings": "app.title",
+      "po": "app.title",
+      "android": "app_title"
+    },
+    "login.usernameOrEmail.label": {
+      "resw": "login.usernameOrEmail.label",
+      "strings": "login.usernameOrEmail.label",
+      "po": "login.usernameOrEmail.label",
+      "android": "login_username_or_email_label"
+    },
+    "home.hero.description": {
+      "resw": "home.hero.description",
+      "strings": "home.hero.description",
+      "po": "home.hero.description",
+      "android": "home_hero_description"
+    },
+    "verify.sent": {
+      "resw": "verify.sent",
+      "strings": "verify.sent",
+      "po": "verify.sent",
+      "android": "verify_sent"
+    },
+    "mc.whitelist.count": {
+      "resw": "mc.whitelist.count",
+      "strings": "mc.whitelist.count",
+      "po": "mc.whitelist.count",
+      "android": "mc_whitelist_count"
+    },
+    "error.transport.rate_limited": {
+      "resw": "error.transport.rate_limited",
+      "strings": "error.transport.rate_limited",
+      "po": "error.transport.rate_limited",
+      "android": "error_transport_rate_limited"
+    }
+  }
+}

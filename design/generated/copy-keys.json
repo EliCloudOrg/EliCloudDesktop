@@ -1,0 +1,1291 @@
+{
+  "version": 1,
+  "source": "contracts/copy/zh-CN.json",
+  "note": "语义 key → 各端资源名；Android 资源名由生成器确定性转换，其它端直接用语义 key。",
+  "keys": {
+    "app.title": {
+      "resw": "app.title",
+      "strings": "app.title",
+      "po": "app.title",
+      "android": "app_title"
+    },
+    "app.subtitle": {
+      "resw": "app.subtitle",
+      "strings": "app.subtitle",
+      "po": "app.subtitle",
+      "android": "app_subtitle"
+    },
+    "app.productName": {
+      "resw": "app.productName",
+      "strings": "app.productName",
+      "po": "app.productName",
+      "android": "app_product_name"
+    },
+    "app.version": {
+      "resw": "app.version",
+      "strings": "app.version",
+      "po": "app.version",
+      "android": "app_version"
+    },
+    "nav.home": {
+      "resw": "nav.home",
+      "strings": "nav.home",
+      "po": "nav.home",
+      "android": "nav_home"
+    },
+    "nav.services": {
+      "resw": "nav.services",
+      "strings": "nav.services",
+      "po": "nav.services",
+      "android": "nav_services"
+    },
+    "nav.profile": {
+      "resw": "nav.profile",
+      "strings": "nav.profile",
+      "po": "nav.profile",
+      "android": "nav_profile"
+    },
+    "nav.settings": {
+      "resw": "nav.settings",
+      "strings": "nav.settings",
+      "po": "nav.settings",
+      "android": "nav_settings"
+    },
+    "nav.missingPage": {
+      "resw": "nav.missingPage",
+      "strings": "nav.missingPage",
+      "po": "nav.missingPage",
+      "android": "nav_missing_page"
+    },
+    "nav.missingPageDetail": {
+      "resw": "nav.missingPageDetail",
+      "strings": "nav.missingPageDetail",
+      "po": "nav.missingPageDetail",
+      "android": "nav_missing_page_detail"
+    },
+    "common.save": {
+      "resw": "common.save",
+      "strings": "common.save",
+      "po": "common.save",
+      "android": "common_save"
+    },
+    "common.saving": {
+      "resw": "common.saving",
+      "strings": "common.saving",
+      "po": "common.saving",
+      "android": "common_saving"
+    },
+    "common.cancel": {
+      "resw": "common.cancel",
+      "strings": "common.cancel",
+      "po": "common.cancel",
+      "android": "common_cancel"
+    },
+    "common.add": {
+      "resw": "common.add",
+      "strings": "common.add",
+      "po": "common.add",
+      "android": "common_add"
+    },
+    "common.refresh": {
+      "resw": "common.refresh",
+      "strings": "common.refresh",
+      "po": "common.refresh",
+      "android": "common_refresh"
+    },
+    "common.open": {
+      "resw": "common.open",
+      "strings": "common.open",
+      "po": "common.open",
+      "android": "common_open"
+    },
+    "common.loading": {
+      "resw": "common.loading",
+      "strings": "common.loading",
+      "po": "common.loading",
+      "android": "common_loading"
+    },
+    "common.loadFailed": {
+      "resw": "common.loadFailed",
+      "strings": "common.loadFailed",
+      "po": "common.loadFailed",
+      "android": "common_load_failed"
+    },
+    "common.processing": {
+      "resw": "common.processing",
+      "strings": "common.processing",
+      "po": "common.processing",
+      "android": "common_processing"
+    },
+    "status.available": {
+      "resw": "status.available",
+      "strings": "status.available",
+      "po": "status.available",
+      "android": "status_available"
+    },
+    "status.unavailable": {
+      "resw": "status.unavailable",
+      "strings": "status.unavailable",
+      "po": "status.unavailable",
+      "android": "status_unavailable"
+    },
+    "status.maintenance": {
+      "resw": "status.maintenance",
+      "strings": "status.maintenance",
+      "po": "status.maintenance",
+      "android": "status_maintenance"
+    },
+    "status.comingSoon": {
+      "resw": "status.comingSoon",
+      "strings": "status.comingSoon",
+      "po": "status.comingSoon",
+      "android": "status_coming_soon"
+    },
+    "status.probing": {
+      "resw": "status.probing",
+      "strings": "status.probing",
+      "po": "status.probing",
+      "android": "status_probing"
+    },
+    "status.running": {
+      "resw": "status.running",
+      "strings": "status.running",
+      "po": "status.running",
+      "android": "status_running"
+    },
+    "status.degraded": {
+      "resw": "status.degraded",
+      "strings": "status.degraded",
+      "po": "status.degraded",
+      "android": "status_degraded"
+    },
+    "status.unreachable": {
+      "resw": "status.unreachable",
+      "strings": "status.unreachable",
+      "po": "status.unreachable",
+      "android": "status_unreachable"
+    },
+    "status.loggedIn": {
+      "resw": "status.loggedIn",
+      "strings": "status.loggedIn",
+      "po": "status.loggedIn",
+      "android": "status_logged_in"
+    },
+    "status.notLoggedIn": {
+      "resw": "status.notLoggedIn",
+      "strings": "status.notLoggedIn",
+      "po": "status.notLoggedIn",
+      "android": "status_not_logged_in"
+    },
+    "status.emailVerified": {
+      "resw": "status.emailVerified",
+      "strings": "status.emailVerified",
+      "po": "status.emailVerified",
+      "android": "status_email_verified"
+    },
+    "status.emailUnverified": {
+      "resw": "status.emailUnverified",
+      "strings": "status.emailUnverified",
+      "po": "status.emailUnverified",
+      "android": "status_email_unverified"
+    },
+    "status.emailUnbound": {
+      "resw": "status.emailUnbound",
+      "strings": "status.emailUnbound",
+      "po": "status.emailUnbound",
+      "android": "status_email_unbound"
+    },
+    "status.emailPending": {
+      "resw": "status.emailPending",
+      "strings": "status.emailPending",
+      "po": "status.emailPending",
+      "android": "status_email_pending"
+    },
+    "status.expired": {
+      "resw": "status.expired",
+      "strings": "status.expired",
+      "po": "status.expired",
+      "android": "status_expired"
+    },
+    "status.serviceStatus": {
+      "resw": "status.serviceStatus",
+      "strings": "status.serviceStatus",
+      "po": "status.serviceStatus",
+      "android": "status_service_status"
+    },
+    "login.usernameOrEmail.label": {
+      "resw": "login.usernameOrEmail.label",
+      "strings": "login.usernameOrEmail.label",
+      "po": "login.usernameOrEmail.label",
+      "android": "login_username_or_email_label"
+    },
+    "login.usernameOrEmail.placeholder": {
+      "resw": "login.usernameOrEmail.placeholder",
+      "strings": "login.usernameOrEmail.placeholder",
+      "po": "login.usernameOrEmail.placeholder",
+      "android": "login_username_or_email_placeholder"
+    },
+    "login.username.label": {
+      "resw": "login.username.label",
+      "strings": "login.username.label",
+      "po": "login.username.label",
+      "android": "login_username_label"
+    },
+    "login.username.placeholder": {
+      "resw": "login.username.placeholder",
+      "strings": "login.username.placeholder",
+      "po": "login.username.placeholder",
+      "android": "login_username_placeholder"
+    },
+    "login.username.hint": {
+      "resw": "login.username.hint",
+      "strings": "login.username.hint",
+      "po": "login.username.hint",
+      "android": "login_username_hint"
+    },
+    "login.password.label": {
+      "resw": "login.password.label",
+      "strings": "login.password.label",
+      "po": "login.password.label",
+      "android": "login_password_label"
+    },
+    "login.password.placeholder": {
+      "resw": "login.password.placeholder",
+      "strings": "login.password.placeholder",
+      "po": "login.password.placeholder",
+      "android": "login_password_placeholder"
+    },
+    "login.submit": {
+      "resw": "login.submit",
+      "strings": "login.submit",
+      "po": "login.submit",
+      "android": "login_submit"
+    },
+    "login.busy": {
+      "resw": "login.busy",
+      "strings": "login.busy",
+      "po": "login.busy",
+      "android": "login_busy"
+    },
+    "login.failed": {
+      "resw": "login.failed",
+      "strings": "login.failed",
+      "po": "login.failed",
+      "android": "login_failed"
+    },
+    "login.switchToRegister": {
+      "resw": "login.switchToRegister",
+      "strings": "login.switchToRegister",
+      "po": "login.switchToRegister",
+      "android": "login_switch_to_register"
+    },
+    "login.register.submit": {
+      "resw": "login.register.submit",
+      "strings": "login.register.submit",
+      "po": "login.register.submit",
+      "android": "login_register_submit"
+    },
+    "login.register.busy": {
+      "resw": "login.register.busy",
+      "strings": "login.register.busy",
+      "po": "login.register.busy",
+      "android": "login_register_busy"
+    },
+    "login.register.failed": {
+      "resw": "login.register.failed",
+      "strings": "login.register.failed",
+      "po": "login.register.failed",
+      "android": "login_register_failed"
+    },
+    "login.switchToLogin": {
+      "resw": "login.switchToLogin",
+      "strings": "login.switchToLogin",
+      "po": "login.switchToLogin",
+      "android": "login_switch_to_login"
+    },
+    "login.email.label": {
+      "resw": "login.email.label",
+      "strings": "login.email.label",
+      "po": "login.email.label",
+      "android": "login_email_label"
+    },
+    "login.email.placeholder": {
+      "resw": "login.email.placeholder",
+      "strings": "login.email.placeholder",
+      "po": "login.email.placeholder",
+      "android": "login_email_placeholder"
+    },
+    "verify.title": {
+      "resw": "verify.title",
+      "strings": "verify.title",
+      "po": "verify.title",
+      "android": "verify_title"
+    },
+    "verify.sent": {
+      "resw": "verify.sent",
+      "strings": "verify.sent",
+      "po": "verify.sent",
+      "android": "verify_sent"
+    },
+    "verify.instructions": {
+      "resw": "verify.instructions",
+      "strings": "verify.instructions",
+      "po": "verify.instructions",
+      "android": "verify_instructions"
+    },
+    "verify.waiting": {
+      "resw": "verify.waiting",
+      "strings": "verify.waiting",
+      "po": "verify.waiting",
+      "android": "verify_waiting"
+    },
+    "verify.resend": {
+      "resw": "verify.resend",
+      "strings": "verify.resend",
+      "po": "verify.resend",
+      "android": "verify_resend"
+    },
+    "verify.resendCountdown": {
+      "resw": "verify.resendCountdown",
+      "strings": "verify.resendCountdown",
+      "po": "verify.resendCountdown",
+      "android": "verify_resend_countdown"
+    },
+    "verify.changeEmail": {
+      "resw": "verify.changeEmail",
+      "strings": "verify.changeEmail",
+      "po": "verify.changeEmail",
+      "android": "verify_change_email"
+    },
+    "verify.backToLogin": {
+      "resw": "verify.backToLogin",
+      "strings": "verify.backToLogin",
+      "po": "verify.backToLogin",
+      "android": "verify_back_to_login"
+    },
+    "verify.failedTitle": {
+      "resw": "verify.failedTitle",
+      "strings": "verify.failedTitle",
+      "po": "verify.failedTitle",
+      "android": "verify_failed_title"
+    },
+    "verify.terminalTitle": {
+      "resw": "verify.terminalTitle",
+      "strings": "verify.terminalTitle",
+      "po": "verify.terminalTitle",
+      "android": "verify_terminal_title"
+    },
+    "verify.terminalDetail": {
+      "resw": "verify.terminalDetail",
+      "strings": "verify.terminalDetail",
+      "po": "verify.terminalDetail",
+      "android": "verify_terminal_detail"
+    },
+    "verify.expired": {
+      "resw": "verify.expired",
+      "strings": "verify.expired",
+      "po": "verify.expired",
+      "android": "verify_expired"
+    },
+    "verify.invalidated": {
+      "resw": "verify.invalidated",
+      "strings": "verify.invalidated",
+      "po": "verify.invalidated",
+      "android": "verify_invalidated"
+    },
+    "verify.networkRetry": {
+      "resw": "verify.networkRetry",
+      "strings": "verify.networkRetry",
+      "po": "verify.networkRetry",
+      "android": "verify_network_retry"
+    },
+    "verify.confirmedSignIn": {
+      "resw": "verify.confirmedSignIn",
+      "strings": "verify.confirmedSignIn",
+      "po": "verify.confirmedSignIn",
+      "android": "verify_confirmed_sign_in"
+    },
+    "verify.usernameTaken": {
+      "resw": "verify.usernameTaken",
+      "strings": "verify.usernameTaken",
+      "po": "verify.usernameTaken",
+      "android": "verify_username_taken"
+    },
+    "verify.emailTaken": {
+      "resw": "verify.emailTaken",
+      "strings": "verify.emailTaken",
+      "po": "verify.emailTaken",
+      "android": "verify_email_taken"
+    },
+    "verify.incomplete": {
+      "resw": "verify.incomplete",
+      "strings": "verify.incomplete",
+      "po": "verify.incomplete",
+      "android": "verify_incomplete"
+    },
+    "home.hero.title": {
+      "resw": "home.hero.title",
+      "strings": "home.hero.title",
+      "po": "home.hero.title",
+      "android": "home_hero_title"
+    },
+    "home.hero.description": {
+      "resw": "home.hero.description",
+      "strings": "home.hero.description",
+      "po": "home.hero.description",
+      "android": "home_hero_description"
+    },
+    "home.section.new.title": {
+      "resw": "home.section.new.title",
+      "strings": "home.section.new.title",
+      "po": "home.section.new.title",
+      "android": "home_section_new_title"
+    },
+    "home.section.new.description": {
+      "resw": "home.section.new.description",
+      "strings": "home.section.new.description",
+      "po": "home.section.new.description",
+      "android": "home_section_new_description"
+    },
+    "home.section.working.title": {
+      "resw": "home.section.working.title",
+      "strings": "home.section.working.title",
+      "po": "home.section.working.title",
+      "android": "home_section_working_title"
+    },
+    "home.section.working.description": {
+      "resw": "home.section.working.description",
+      "strings": "home.section.working.description",
+      "po": "home.section.working.description",
+      "android": "home_section_working_description"
+    },
+    "home.section.stopped.title": {
+      "resw": "home.section.stopped.title",
+      "strings": "home.section.stopped.title",
+      "po": "home.section.stopped.title",
+      "android": "home_section_stopped_title"
+    },
+    "home.section.stopped.description": {
+      "resw": "home.section.stopped.description",
+      "strings": "home.section.stopped.description",
+      "po": "home.section.stopped.description",
+      "android": "home_section_stopped_description"
+    },
+    "home.loading": {
+      "resw": "home.loading",
+      "strings": "home.loading",
+      "po": "home.loading",
+      "android": "home_loading"
+    },
+    "home.empty": {
+      "resw": "home.empty",
+      "strings": "home.empty",
+      "po": "home.empty",
+      "android": "home_empty"
+    },
+    "service.mc.title": {
+      "resw": "service.mc.title",
+      "strings": "service.mc.title",
+      "po": "service.mc.title",
+      "android": "service_mc_title"
+    },
+    "service.mc.description": {
+      "resw": "service.mc.description",
+      "strings": "service.mc.description",
+      "po": "service.mc.description",
+      "android": "service_mc_description"
+    },
+    "service.pdf.title": {
+      "resw": "service.pdf.title",
+      "strings": "service.pdf.title",
+      "po": "service.pdf.title",
+      "android": "service_pdf_title"
+    },
+    "service.pdf.description": {
+      "resw": "service.pdf.description",
+      "strings": "service.pdf.description",
+      "po": "service.pdf.description",
+      "android": "service_pdf_description"
+    },
+    "service.card.open": {
+      "resw": "service.card.open",
+      "strings": "service.card.open",
+      "po": "service.card.open",
+      "android": "service_card_open"
+    },
+    "profile.emptyBio": {
+      "resw": "profile.emptyBio",
+      "strings": "profile.emptyBio",
+      "po": "profile.emptyBio",
+      "android": "profile_empty_bio"
+    },
+    "profile.username": {
+      "resw": "profile.username",
+      "strings": "profile.username",
+      "po": "profile.username",
+      "android": "profile_username"
+    },
+    "profile.email": {
+      "resw": "profile.email",
+      "strings": "profile.email",
+      "po": "profile.email",
+      "android": "profile_email"
+    },
+    "profile.emailUnbound": {
+      "resw": "profile.emailUnbound",
+      "strings": "profile.emailUnbound",
+      "po": "profile.emailUnbound",
+      "android": "profile_email_unbound"
+    },
+    "profile.emailStatus": {
+      "resw": "profile.emailStatus",
+      "strings": "profile.emailStatus",
+      "po": "profile.emailStatus",
+      "android": "profile_email_status"
+    },
+    "profile.loginStatus": {
+      "resw": "profile.loginStatus",
+      "strings": "profile.loginStatus",
+      "po": "profile.loginStatus",
+      "android": "profile_login_status"
+    },
+    "profile.expiresAt": {
+      "resw": "profile.expiresAt",
+      "strings": "profile.expiresAt",
+      "po": "profile.expiresAt",
+      "android": "profile_expires_at"
+    },
+    "profile.edit.title": {
+      "resw": "profile.edit.title",
+      "strings": "profile.edit.title",
+      "po": "profile.edit.title",
+      "android": "profile_edit_title"
+    },
+    "profile.edit.open": {
+      "resw": "profile.edit.open",
+      "strings": "profile.edit.open",
+      "po": "profile.edit.open",
+      "android": "profile_edit_open"
+    },
+    "profile.edit.avatar": {
+      "resw": "profile.edit.avatar",
+      "strings": "profile.edit.avatar",
+      "po": "profile.edit.avatar",
+      "android": "profile_edit_avatar"
+    },
+    "profile.edit.change": {
+      "resw": "profile.edit.change",
+      "strings": "profile.edit.change",
+      "po": "profile.edit.change",
+      "android": "profile_edit_change"
+    },
+    "profile.edit.banner": {
+      "resw": "profile.edit.banner",
+      "strings": "profile.edit.banner",
+      "po": "profile.edit.banner",
+      "android": "profile_edit_banner"
+    },
+    "profile.edit.changeBanner": {
+      "resw": "profile.edit.changeBanner",
+      "strings": "profile.edit.changeBanner",
+      "po": "profile.edit.changeBanner",
+      "android": "profile_edit_change_banner"
+    },
+    "profile.edit.removeBanner": {
+      "resw": "profile.edit.removeBanner",
+      "strings": "profile.edit.removeBanner",
+      "po": "profile.edit.removeBanner",
+      "android": "profile_edit_remove_banner"
+    },
+    "profile.edit.nickname": {
+      "resw": "profile.edit.nickname",
+      "strings": "profile.edit.nickname",
+      "po": "profile.edit.nickname",
+      "android": "profile_edit_nickname"
+    },
+    "profile.edit.nicknamePlaceholder": {
+      "resw": "profile.edit.nicknamePlaceholder",
+      "strings": "profile.edit.nicknamePlaceholder",
+      "po": "profile.edit.nicknamePlaceholder",
+      "android": "profile_edit_nickname_placeholder"
+    },
+    "profile.edit.nicknameHint": {
+      "resw": "profile.edit.nicknameHint",
+      "strings": "profile.edit.nicknameHint",
+      "po": "profile.edit.nicknameHint",
+      "android": "profile_edit_nickname_hint"
+    },
+    "profile.edit.bio": {
+      "resw": "profile.edit.bio",
+      "strings": "profile.edit.bio",
+      "po": "profile.edit.bio",
+      "android": "profile_edit_bio"
+    },
+    "profile.edit.bioPlaceholder": {
+      "resw": "profile.edit.bioPlaceholder",
+      "strings": "profile.edit.bioPlaceholder",
+      "po": "profile.edit.bioPlaceholder",
+      "android": "profile_edit_bio_placeholder"
+    },
+    "profile.edit.bioHint": {
+      "resw": "profile.edit.bioHint",
+      "strings": "profile.edit.bioHint",
+      "po": "profile.edit.bioHint",
+      "android": "profile_edit_bio_hint"
+    },
+    "profile.edit.cropBanner": {
+      "resw": "profile.edit.cropBanner",
+      "strings": "profile.edit.cropBanner",
+      "po": "profile.edit.cropBanner",
+      "android": "profile_edit_crop_banner"
+    },
+    "profile.edit.cropAvatar": {
+      "resw": "profile.edit.cropAvatar",
+      "strings": "profile.edit.cropAvatar",
+      "po": "profile.edit.cropAvatar",
+      "android": "profile_edit_crop_avatar"
+    },
+    "profile.edit.cropBannerHint": {
+      "resw": "profile.edit.cropBannerHint",
+      "strings": "profile.edit.cropBannerHint",
+      "po": "profile.edit.cropBannerHint",
+      "android": "profile_edit_crop_banner_hint"
+    },
+    "profile.edit.cropAvatarHint": {
+      "resw": "profile.edit.cropAvatarHint",
+      "strings": "profile.edit.cropAvatarHint",
+      "po": "profile.edit.cropAvatarHint",
+      "android": "profile_edit_crop_avatar_hint"
+    },
+    "profile.edit.applyCrop": {
+      "resw": "profile.edit.applyCrop",
+      "strings": "profile.edit.applyCrop",
+      "po": "profile.edit.applyCrop",
+      "android": "profile_edit_apply_crop"
+    },
+    "profile.edit.readingImage": {
+      "resw": "profile.edit.readingImage",
+      "strings": "profile.edit.readingImage",
+      "po": "profile.edit.readingImage",
+      "android": "profile_edit_reading_image"
+    },
+    "profile.edit.pickerFailed": {
+      "resw": "profile.edit.pickerFailed",
+      "strings": "profile.edit.pickerFailed",
+      "po": "profile.edit.pickerFailed",
+      "android": "profile_edit_picker_failed"
+    },
+    "profile.edit.avatarTooLarge": {
+      "resw": "profile.edit.avatarTooLarge",
+      "strings": "profile.edit.avatarTooLarge",
+      "po": "profile.edit.avatarTooLarge",
+      "android": "profile_edit_avatar_too_large"
+    },
+    "profile.edit.bannerTooLarge": {
+      "resw": "profile.edit.bannerTooLarge",
+      "strings": "profile.edit.bannerTooLarge",
+      "po": "profile.edit.bannerTooLarge",
+      "android": "profile_edit_banner_too_large"
+    },
+    "profile.edit.imageReadFailed": {
+      "resw": "profile.edit.imageReadFailed",
+      "strings": "profile.edit.imageReadFailed",
+      "po": "profile.edit.imageReadFailed",
+      "android": "profile_edit_image_read_failed"
+    },
+    "profile.edit.imageNotLoaded": {
+      "resw": "profile.edit.imageNotLoaded",
+      "strings": "profile.edit.imageNotLoaded",
+      "po": "profile.edit.imageNotLoaded",
+      "android": "profile_edit_image_not_loaded"
+    },
+    "profile.edit.cropFailed": {
+      "resw": "profile.edit.cropFailed",
+      "strings": "profile.edit.cropFailed",
+      "po": "profile.edit.cropFailed",
+      "android": "profile_edit_crop_failed"
+    },
+    "mc.title": {
+      "resw": "mc.title",
+      "strings": "mc.title",
+      "po": "mc.title",
+      "android": "mc_title"
+    },
+    "mc.description": {
+      "resw": "mc.description",
+      "strings": "mc.description",
+      "po": "mc.description",
+      "android": "mc_description"
+    },
+    "mc.addOpen": {
+      "resw": "mc.addOpen",
+      "strings": "mc.addOpen",
+      "po": "mc.addOpen",
+      "android": "mc_add_open"
+    },
+    "mc.addTitle": {
+      "resw": "mc.addTitle",
+      "strings": "mc.addTitle",
+      "po": "mc.addTitle",
+      "android": "mc_add_title"
+    },
+    "mc.addSubmit": {
+      "resw": "mc.addSubmit",
+      "strings": "mc.addSubmit",
+      "po": "mc.addSubmit",
+      "android": "mc_add_submit"
+    },
+    "mc.adding": {
+      "resw": "mc.adding",
+      "strings": "mc.adding",
+      "po": "mc.adding",
+      "android": "mc_adding"
+    },
+    "mc.addFailed": {
+      "resw": "mc.addFailed",
+      "strings": "mc.addFailed",
+      "po": "mc.addFailed",
+      "android": "mc_add_failed"
+    },
+    "mc.server.title": {
+      "resw": "mc.server.title",
+      "strings": "mc.server.title",
+      "po": "mc.server.title",
+      "android": "mc_server_title"
+    },
+    "mc.server.status": {
+      "resw": "mc.server.status",
+      "strings": "mc.server.status",
+      "po": "mc.server.status",
+      "android": "mc_server_status"
+    },
+    "mc.server.statusDescription": {
+      "resw": "mc.server.statusDescription",
+      "strings": "mc.server.statusDescription",
+      "po": "mc.server.statusDescription",
+      "android": "mc_server_status_description"
+    },
+    "mc.server.health": {
+      "resw": "mc.server.health",
+      "strings": "mc.server.health",
+      "po": "mc.server.health",
+      "android": "mc_server_health"
+    },
+    "mc.server.degraded": {
+      "resw": "mc.server.degraded",
+      "strings": "mc.server.degraded",
+      "po": "mc.server.degraded",
+      "android": "mc_server_degraded"
+    },
+    "mc.server.latency": {
+      "resw": "mc.server.latency",
+      "strings": "mc.server.latency",
+      "po": "mc.server.latency",
+      "android": "mc_server_latency"
+    },
+    "mc.server.latencyValue": {
+      "resw": "mc.server.latencyValue",
+      "strings": "mc.server.latencyValue",
+      "po": "mc.server.latencyValue",
+      "android": "mc_server_latency_value"
+    },
+    "mc.server.unreachable": {
+      "resw": "mc.server.unreachable",
+      "strings": "mc.server.unreachable",
+      "po": "mc.server.unreachable",
+      "android": "mc_server_unreachable"
+    },
+    "mc.server.readFailed": {
+      "resw": "mc.server.readFailed",
+      "strings": "mc.server.readFailed",
+      "po": "mc.server.readFailed",
+      "android": "mc_server_read_failed"
+    },
+    "mc.whitelist.title": {
+      "resw": "mc.whitelist.title",
+      "strings": "mc.whitelist.title",
+      "po": "mc.whitelist.title",
+      "android": "mc_whitelist_title"
+    },
+    "mc.whitelist.count": {
+      "resw": "mc.whitelist.count",
+      "strings": "mc.whitelist.count",
+      "po": "mc.whitelist.count",
+      "android": "mc_whitelist_count"
+    },
+    "mc.quota.title": {
+      "resw": "mc.quota.title",
+      "strings": "mc.quota.title",
+      "po": "mc.quota.title",
+      "android": "mc_quota_title"
+    },
+    "mc.quota.remaining": {
+      "resw": "mc.quota.remaining",
+      "strings": "mc.quota.remaining",
+      "po": "mc.quota.remaining",
+      "android": "mc_quota_remaining"
+    },
+    "mc.quota.exhausted": {
+      "resw": "mc.quota.exhausted",
+      "strings": "mc.quota.exhausted",
+      "po": "mc.quota.exhausted",
+      "android": "mc_quota_exhausted"
+    },
+    "mc.names.title": {
+      "resw": "mc.names.title",
+      "strings": "mc.names.title",
+      "po": "mc.names.title",
+      "android": "mc_names_title"
+    },
+    "mc.names.empty": {
+      "resw": "mc.names.empty",
+      "strings": "mc.names.empty",
+      "po": "mc.names.empty",
+      "android": "mc_names_empty"
+    },
+    "mc.names.loading": {
+      "resw": "mc.names.loading",
+      "strings": "mc.names.loading",
+      "po": "mc.names.loading",
+      "android": "mc_names_loading"
+    },
+    "mc.names.addedAt": {
+      "resw": "mc.names.addedAt",
+      "strings": "mc.names.addedAt",
+      "po": "mc.names.addedAt",
+      "android": "mc_names_added_at"
+    },
+    "mc.names.nameless": {
+      "resw": "mc.names.nameless",
+      "strings": "mc.names.nameless",
+      "po": "mc.names.nameless",
+      "android": "mc_names_nameless"
+    },
+    "mc.names.remove": {
+      "resw": "mc.names.remove",
+      "strings": "mc.names.remove",
+      "po": "mc.names.remove",
+      "android": "mc_names_remove"
+    },
+    "mc.names.removeNamed": {
+      "resw": "mc.names.removeNamed",
+      "strings": "mc.names.removeNamed",
+      "po": "mc.names.removeNamed",
+      "android": "mc_names_remove_named"
+    },
+    "mc.names.removeHint": {
+      "resw": "mc.names.removeHint",
+      "strings": "mc.names.removeHint",
+      "po": "mc.names.removeHint",
+      "android": "mc_names_remove_hint"
+    },
+    "mc.quota.exceededDetail": {
+      "resw": "mc.quota.exceededDetail",
+      "strings": "mc.quota.exceededDetail",
+      "po": "mc.quota.exceededDetail",
+      "android": "mc_quota_exceeded_detail"
+    },
+    "mc.add.nameLabel": {
+      "resw": "mc.add.nameLabel",
+      "strings": "mc.add.nameLabel",
+      "po": "mc.add.nameLabel",
+      "android": "mc_add_name_label"
+    },
+    "mc.add.namePlaceholder": {
+      "resw": "mc.add.namePlaceholder",
+      "strings": "mc.add.namePlaceholder",
+      "po": "mc.add.namePlaceholder",
+      "android": "mc_add_name_placeholder"
+    },
+    "mc.add.nameHint": {
+      "resw": "mc.add.nameHint",
+      "strings": "mc.add.nameHint",
+      "po": "mc.add.nameHint",
+      "android": "mc_add_name_hint"
+    },
+    "mc.add.noteLabel": {
+      "resw": "mc.add.noteLabel",
+      "strings": "mc.add.noteLabel",
+      "po": "mc.add.noteLabel",
+      "android": "mc_add_note_label"
+    },
+    "mc.add.notePlaceholder": {
+      "resw": "mc.add.notePlaceholder",
+      "strings": "mc.add.notePlaceholder",
+      "po": "mc.add.notePlaceholder",
+      "android": "mc_add_note_placeholder"
+    },
+    "mc.add.noteHint": {
+      "resw": "mc.add.noteHint",
+      "strings": "mc.add.noteHint",
+      "po": "mc.add.noteHint",
+      "android": "mc_add_note_hint"
+    },
+    "settings.title": {
+      "resw": "settings.title",
+      "strings": "settings.title",
+      "po": "settings.title",
+      "android": "settings_title"
+    },
+    "settings.description": {
+      "resw": "settings.description",
+      "strings": "settings.description",
+      "po": "settings.description",
+      "android": "settings_description"
+    },
+    "settings.account.title": {
+      "resw": "settings.account.title",
+      "strings": "settings.account.title",
+      "po": "settings.account.title",
+      "android": "settings_account_title"
+    },
+    "settings.account.signedOut": {
+      "resw": "settings.account.signedOut",
+      "strings": "settings.account.signedOut",
+      "po": "settings.account.signedOut",
+      "android": "settings_account_signed_out"
+    },
+    "settings.account.signOut": {
+      "resw": "settings.account.signOut",
+      "strings": "settings.account.signOut",
+      "po": "settings.account.signOut",
+      "android": "settings_account_sign_out"
+    },
+    "settings.appearance.title": {
+      "resw": "settings.appearance.title",
+      "strings": "settings.appearance.title",
+      "po": "settings.appearance.title",
+      "android": "settings_appearance_title"
+    },
+    "settings.appearance.description": {
+      "resw": "settings.appearance.description",
+      "strings": "settings.appearance.description",
+      "po": "settings.appearance.description",
+      "android": "settings_appearance_description"
+    },
+    "settings.appearance.light": {
+      "resw": "settings.appearance.light",
+      "strings": "settings.appearance.light",
+      "po": "settings.appearance.light",
+      "android": "settings_appearance_light"
+    },
+    "settings.appearance.dark": {
+      "resw": "settings.appearance.dark",
+      "strings": "settings.appearance.dark",
+      "po": "settings.appearance.dark",
+      "android": "settings_appearance_dark"
+    },
+    "settings.appearance.system": {
+      "resw": "settings.appearance.system",
+      "strings": "settings.appearance.system",
+      "po": "settings.appearance.system",
+      "android": "settings_appearance_system"
+    },
+    "settings.about.title": {
+      "resw": "settings.about.title",
+      "strings": "settings.about.title",
+      "po": "settings.about.title",
+      "android": "settings_about_title"
+    },
+    "settings.about.version": {
+      "resw": "settings.about.version",
+      "strings": "settings.about.version",
+      "po": "settings.about.version",
+      "android": "settings_about_version"
+    },
+    "error.transport.invalid_request": {
+      "resw": "error.transport.invalid_request",
+      "strings": "error.transport.invalid_request",
+      "po": "error.transport.invalid_request",
+      "android": "error_transport_invalid_request"
+    },
+    "error.transport.invalid_token": {
+      "resw": "error.transport.invalid_token",
+      "strings": "error.transport.invalid_token",
+      "po": "error.transport.invalid_token",
+      "android": "error_transport_invalid_token"
+    },
+    "error.transport.insufficient_scope": {
+      "resw": "error.transport.insufficient_scope",
+      "strings": "error.transport.insufficient_scope",
+      "po": "error.transport.insufficient_scope",
+      "android": "error_transport_insufficient_scope"
+    },
+    "error.transport.forbidden": {
+      "resw": "error.transport.forbidden",
+      "strings": "error.transport.forbidden",
+      "po": "error.transport.forbidden",
+      "android": "error_transport_forbidden"
+    },
+    "error.transport.not_found": {
+      "resw": "error.transport.not_found",
+      "strings": "error.transport.not_found",
+      "po": "error.transport.not_found",
+      "android": "error_transport_not_found"
+    },
+    "error.transport.rate_limited": {
+      "resw": "error.transport.rate_limited",
+      "strings": "error.transport.rate_limited",
+      "po": "error.transport.rate_limited",
+      "android": "error_transport_rate_limited"
+    },
+    "error.transport.too_many_requests": {
+      "resw": "error.transport.too_many_requests",
+      "strings": "error.transport.too_many_requests",
+      "po": "error.transport.too_many_requests",
+      "android": "error_transport_too_many_requests"
+    },
+    "error.transport.server_error": {
+      "resw": "error.transport.server_error",
+      "strings": "error.transport.server_error",
+      "po": "error.transport.server_error",
+      "android": "error_transport_server_error"
+    },
+    "error.transport.jwks_unavailable": {
+      "resw": "error.transport.jwks_unavailable",
+      "strings": "error.transport.jwks_unavailable",
+      "po": "error.transport.jwks_unavailable",
+      "android": "error_transport_jwks_unavailable"
+    },
+    "error.transport.http_error": {
+      "resw": "error.transport.http_error",
+      "strings": "error.transport.http_error",
+      "po": "error.transport.http_error",
+      "android": "error_transport_http_error"
+    },
+    "error.auth.invalid_client": {
+      "resw": "error.auth.invalid_client",
+      "strings": "error.auth.invalid_client",
+      "po": "error.auth.invalid_client",
+      "android": "error_auth_invalid_client"
+    },
+    "error.auth.invalid_grant": {
+      "resw": "error.auth.invalid_grant",
+      "strings": "error.auth.invalid_grant",
+      "po": "error.auth.invalid_grant",
+      "android": "error_auth_invalid_grant"
+    },
+    "error.auth.unauthorized_client": {
+      "resw": "error.auth.unauthorized_client",
+      "strings": "error.auth.unauthorized_client",
+      "po": "error.auth.unauthorized_client",
+      "android": "error_auth_unauthorized_client"
+    },
+    "error.auth.unsupported_grant_type": {
+      "resw": "error.auth.unsupported_grant_type",
+      "strings": "error.auth.unsupported_grant_type",
+      "po": "error.auth.unsupported_grant_type",
+      "android": "error_auth_unsupported_grant_type"
+    },
+    "error.auth.invalid_scope": {
+      "resw": "error.auth.invalid_scope",
+      "strings": "error.auth.invalid_scope",
+      "po": "error.auth.invalid_scope",
+      "android": "error_auth_invalid_scope"
+    },
+    "error.auth.authorization_pending": {
+      "resw": "error.auth.authorization_pending",
+      "strings": "error.auth.authorization_pending",
+      "po": "error.auth.authorization_pending",
+      "android": "error_auth_authorization_pending"
+    },
+    "error.auth.slow_down": {
+      "resw": "error.auth.slow_down",
+      "strings": "error.auth.slow_down",
+      "po": "error.auth.slow_down",
+      "android": "error_auth_slow_down"
+    },
+    "error.auth.access_denied": {
+      "resw": "error.auth.access_denied",
+      "strings": "error.auth.access_denied",
+      "po": "error.auth.access_denied",
+      "android": "error_auth_access_denied"
+    },
+    "error.auth.expired_token": {
+      "resw": "error.auth.expired_token",
+      "strings": "error.auth.expired_token",
+      "po": "error.auth.expired_token",
+      "android": "error_auth_expired_token"
+    },
+    "error.auth.login_required": {
+      "resw": "error.auth.login_required",
+      "strings": "error.auth.login_required",
+      "po": "error.auth.login_required",
+      "android": "error_auth_login_required"
+    },
+    "error.auth.unsupported_response_type": {
+      "resw": "error.auth.unsupported_response_type",
+      "strings": "error.auth.unsupported_response_type",
+      "po": "error.auth.unsupported_response_type",
+      "android": "error_auth_unsupported_response_type"
+    },
+    "error.auth.email_not_verified": {
+      "resw": "error.auth.email_not_verified",
+      "strings": "error.auth.email_not_verified",
+      "po": "error.auth.email_not_verified",
+      "android": "error_auth_email_not_verified"
+    },
+    "error.registration.user_exists": {
+      "resw": "error.registration.user_exists",
+      "strings": "error.registration.user_exists",
+      "po": "error.registration.user_exists",
+      "android": "error_registration_user_exists"
+    },
+    "error.registration.email_exists": {
+      "resw": "error.registration.email_exists",
+      "strings": "error.registration.email_exists",
+      "po": "error.registration.email_exists",
+      "android": "error_registration_email_exists"
+    },
+    "error.registration.registration_disabled": {
+      "resw": "error.registration.registration_disabled",
+      "strings": "error.registration.registration_disabled",
+      "po": "error.registration.registration_disabled",
+      "android": "error_registration_registration_disabled"
+    },
+    "error.registration.registration_pending": {
+      "resw": "error.registration.registration_pending",
+      "strings": "error.registration.registration_pending",
+      "po": "error.registration.registration_pending",
+      "android": "error_registration_registration_pending"
+    },
+    "error.registration.registration_not_found": {
+      "resw": "error.registration.registration_not_found",
+      "strings": "error.registration.registration_not_found",
+      "po": "error.registration.registration_not_found",
+      "android": "error_registration_registration_not_found"
+    },
+    "error.registration.registration_expired": {
+      "resw": "error.registration.registration_expired",
+      "strings": "error.registration.registration_expired",
+      "po": "error.registration.registration_expired",
+      "android": "error_registration_registration_expired"
+    },
+    "error.registration.already_verified": {
+      "resw": "error.registration.already_verified",
+      "strings": "error.registration.already_verified",
+      "po": "error.registration.already_verified",
+      "android": "error_registration_already_verified"
+    },
+    "error.registration.email_delivery_failed": {
+      "resw": "error.registration.email_delivery_failed",
+      "strings": "error.registration.email_delivery_failed",
+      "po": "error.registration.email_delivery_failed",
+      "android": "error_registration_email_delivery_failed"
+    },
+    "error.registration.email_service_unavailable": {
+      "resw": "error.registration.email_service_unavailable",
+      "strings": "error.registration.email_service_unavailable",
+      "po": "error.registration.email_service_unavailable",
+      "android": "error_registration_email_service_unavailable"
+    },
+    "error.profile.invalid_nickname": {
+      "resw": "error.profile.invalid_nickname",
+      "strings": "error.profile.invalid_nickname",
+      "po": "error.profile.invalid_nickname",
+      "android": "error_profile_invalid_nickname"
+    },
+    "error.profile.invalid_bio": {
+      "resw": "error.profile.invalid_bio",
+      "strings": "error.profile.invalid_bio",
+      "po": "error.profile.invalid_bio",
+      "android": "error_profile_invalid_bio"
+    },
+    "error.profile.invalid_image": {
+      "resw": "error.profile.invalid_image",
+      "strings": "error.profile.invalid_image",
+      "po": "error.profile.invalid_image",
+      "android": "error_profile_invalid_image"
+    },
+    "error.profile.unsupported_image_type": {
+      "resw": "error.profile.unsupported_image_type",
+      "strings": "error.profile.unsupported_image_type",
+      "po": "error.profile.unsupported_image_type",
+      "android": "error_profile_unsupported_image_type"
+    },
+    "error.profile.image_too_large": {
+      "resw": "error.profile.image_too_large",
+      "strings": "error.profile.image_too_large",
+      "po": "error.profile.image_too_large",
+      "android": "error_profile_image_too_large"
+    },
+    "error.profile.image_quota_exceeded": {
+      "resw": "error.profile.image_quota_exceeded",
+      "strings": "error.profile.image_quota_exceeded",
+      "po": "error.profile.image_quota_exceeded",
+      "android": "error_profile_image_quota_exceeded"
+    },
+    "error.profile.image_not_found": {
+      "resw": "error.profile.image_not_found",
+      "strings": "error.profile.image_not_found",
+      "po": "error.profile.image_not_found",
+      "android": "error_profile_image_not_found"
+    },
+    "error.profile.profile_not_found": {
+      "resw": "error.profile.profile_not_found",
+      "strings": "error.profile.profile_not_found",
+      "po": "error.profile.profile_not_found",
+      "android": "error_profile_profile_not_found"
+    },
+    "error.profile.file_service_unavailable": {
+      "resw": "error.profile.file_service_unavailable",
+      "strings": "error.profile.file_service_unavailable",
+      "po": "error.profile.file_service_unavailable",
+      "android": "error_profile_file_service_unavailable"
+    },
+    "error.profile.file_service_error": {
+      "resw": "error.profile.file_service_error",
+      "strings": "error.profile.file_service_error",
+      "po": "error.profile.file_service_error",
+      "android": "error_profile_file_service_error"
+    },
+    "error.profile.database_unavailable": {
+      "resw": "error.profile.database_unavailable",
+      "strings": "error.profile.database_unavailable",
+      "po": "error.profile.database_unavailable",
+      "android": "error_profile_database_unavailable"
+    },
+    "error.mc.name_taken": {
+      "resw": "error.mc.name_taken",
+      "strings": "error.mc.name_taken",
+      "po": "error.mc.name_taken",
+      "android": "error_mc_name_taken"
+    },
+    "error.mc.quota_exceeded": {
+      "resw": "error.mc.quota_exceeded",
+      "strings": "error.mc.quota_exceeded",
+      "po": "error.mc.quota_exceeded",
+      "android": "error_mc_quota_exceeded"
+    },
+    "error.mc.rcon_unavailable": {
+      "resw": "error.mc.rcon_unavailable",
+      "strings": "error.mc.rcon_unavailable",
+      "po": "error.mc.rcon_unavailable",
+      "android": "error_mc_rcon_unavailable"
+    },
+    "error.client.network_error": {
+      "resw": "error.client.network_error",
+      "strings": "error.client.network_error",
+      "po": "error.client.network_error",
+      "android": "error_client_network_error"
+    },
+    "error.client.timeout": {
+      "resw": "error.client.timeout",
+      "strings": "error.client.timeout",
+      "po": "error.client.timeout",
+      "android": "error_client_timeout"
+    },
+    "error.client.invalid_response": {
+      "resw": "error.client.invalid_response",
+      "strings": "error.client.invalid_response",
+      "po": "error.client.invalid_response",
+      "android": "error_client_invalid_response"
+    },
+    "error.client.unknown": {
+      "resw": "error.client.unknown",
+      "strings": "error.client.unknown",
+      "po": "error.client.unknown",
+      "android": "error_client_unknown"
+    }
+  }
+}
