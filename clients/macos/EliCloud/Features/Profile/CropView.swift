@@ -9,13 +9,22 @@ final class CropModel: ObservableObject {
     let aspect: CGFloat
     @Published var rect: CGRect
 
+    /// 图片的像素长宽比（W/H）。
+    private let imageAspect: CGFloat
+
     init(source: CGImage, aspect: CGFloat) {
         self.source = source
         self.aspect = max(0.1, aspect)
+        self.imageAspect = CGFloat(source.width) / CGFloat(max(1, source.height))
         self.rect = Self.initialRect(aspect: aspect, imageSize: CGSize(width: source.width, height: source.height))
     }
 
-    /// 初始选区：按长宽比在图片里取最大居中区域。
+    /// 归一化高度：像素长宽比 = aspect 时，h = w * imageW / (aspect * imageH)。
+    private func normalizedHeight(forWidth width: CGFloat) -> CGFloat {
+        width * imageAspect / aspect
+    }
+
+    /// 初始选区：按长宽比在图片里取最大居中区域（像素空间计算后再归一化）。
     private static func initialRect(aspect: CGFloat, imageSize: CGSize) -> CGRect {
         let imageAspect = imageSize.width / max(1, imageSize.height)
         if imageAspect > aspect {
@@ -33,17 +42,18 @@ final class CropModel: ObservableObject {
         rect = moved
     }
 
-    /// 拖手柄缩放：以选区中心为锚点，保持比例，限制在图片内，最小 5%。
+    /// 拖手柄缩放：以选区中心为锚点，保持**像素**长宽比，限制在图片内，最小 5%。
     func resize(by deltaWidth: CGFloat) {
         let minWidth: CGFloat = 0.05
         let center = CGPoint(x: rect.midX, y: rect.midY)
         var width = rect.width + deltaWidth
         width = min(max(minWidth, width), 1)
-        var height = width / aspect
+        var height = normalizedHeight(forWidth: width)
         if height > 1 {
             height = 1
-            width = height * aspect
+            width = height * aspect / imageAspect
         }
+        guard width > 0, height > 0 else { return }
         let originX = min(max(0, center.x - width / 2), 1 - width)
         let originY = min(max(0, center.y - height / 2), 1 - height)
         rect = CGRect(x: originX, y: originY, width: width, height: height)

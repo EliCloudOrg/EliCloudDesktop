@@ -36,9 +36,10 @@ final class ImagePipelineTests: XCTestCase {
 
     func testCropThenScaleToAvatarBounds() throws {
         let image = try makeImage(width: 1200, height: 800)
+        // 1200×800 上取 600×600 的正方形 = 归一化 0.5 × 0.75。
         let data = try ImagePipeline.pngData(
             cropped: image,
-            normalizedRect: CGRect(x: 0.1, y: 0.1, width: 0.5, height: 0.5),
+            normalizedRect: CGRect(x: 0.25, y: 0.125, width: 0.5, height: 0.75),
             maxDimension: ImagePipeline.avatarMaxDimension
         )
         let decoded = try ImagePipeline.loadImage(from: data)

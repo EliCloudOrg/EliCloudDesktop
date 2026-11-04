@@ -7,8 +7,18 @@ import Foundation
 /// 所以统一走这里：取本地化字符串 + 手工替换占位符。
 enum Copy {
 
+    /// 只发布 zh-Hans 一套文案；系统语言不是中文时也回退到它，而不是把 key 显示给用户。
+    private static let localizedBundle: Bundle = {
+        if let path = Bundle.main.path(forResource: "zh-Hans", ofType: "lproj"),
+            let bundle = Bundle(path: path)
+        {
+            return bundle
+        }
+        return .main
+    }()
+
     static func text(_ key: String, _ arguments: [String: String] = [:]) -> String {
-        var value = NSLocalizedString(key, comment: "")
+        var value = localizedBundle.localizedString(forKey: key, value: key, table: nil)
         for (name, replacement) in arguments {
             value = value.replacingOccurrences(of: "{\(name)}", with: replacement)
         }
