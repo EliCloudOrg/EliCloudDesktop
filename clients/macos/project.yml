@@ -39,6 +39,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cloud.elipese.EliCloud
         PRODUCT_NAME: EliCloud
+        PRODUCT_MODULE_NAME: EliCloud
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_KEY_CFBundleDisplayName: EliCloud
@@ -62,4 +63,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cloud.elipese.EliCloudTests
+        PRODUCT_NAME: EliCloudTests
+        PRODUCT_MODULE_NAME: EliCloudTests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/EliCloud.app/Contents/MacOS/EliCloud"
+        BUNDLE_LOADER: "$(TEST_HOST)"
         GENERATE_INFOPLIST_FILE: "YES"
