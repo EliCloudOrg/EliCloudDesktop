@@ -40,6 +40,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: cloud.elipese.EliCloud
         PRODUCT_NAME: EliCloud
         PRODUCT_MODULE_NAME: EliCloud
+        # 单元测试用 `@testable import EliCloud`；显式打开，避免 CI 上按 Release 语义编译主 target。
+        ENABLE_TESTABILITY: "YES"
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_KEY_CFBundleDisplayName: EliCloud
