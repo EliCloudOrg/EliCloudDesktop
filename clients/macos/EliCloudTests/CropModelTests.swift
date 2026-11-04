@@ -11,8 +11,10 @@ final class CropModelTests: XCTestCase {
         let pixelWidth = model.rect.width * 1200
         let pixelHeight = model.rect.height * 800
         XCTAssertEqual(pixelWidth, pixelHeight, accuracy: 1, "1:1 选区在像素空间必须是正方形")
-        XCTAssertEqual(model.rect.minX, 0.25, accuracy: 0.02)
-        XCTAssertEqual(model.rect.minY, 0, accuracy: 0.02)
+        // 1200×800 上最大的正方形是 800×800：占宽 2/3，水平居中、垂直占满。
+        XCTAssertEqual(model.rect.width, 2.0 / 3.0, accuracy: 0.01)
+        XCTAssertEqual(model.rect.minX, 1.0 / 6.0, accuracy: 0.01)
+        XCTAssertEqual(model.rect.minY, 0, accuracy: 0.01)
     }
 
     func testBannerSelectionIsFiveToOneInPixels() throws {
